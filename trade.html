@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Échange Archimonstres - Dofus Touch</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            color: #2c3e50;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #2c3e50;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .header button {
+            padding: 10px 20px;
+            background: #2a5298;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .header button:hover {
+            background: #1e3c72;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        h2 {
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .trade-section {
+            margin-bottom: 30px;
+        }
+
+        .trade-list {
+            background: #34495e;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .trade-item {
+            padding: 10px;
+            border-bottom: 1px solid #2c3e50;
+            color: white;
+        }
+
+        .trade-item:last-child {
+            border-bottom: none;
+        }
+
+        .trade-item span {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Échange des Archimonstres</h1>
+            <div>
+                <button id="backBtn">Retour</button>
+                <button id="logoutBtn">Déconnexion</button>
+            </div>
+        </div>
+        <div class="trade-section">
+            <h2>Doublons (Quantité ≥ 2)</h2>
+            <div class="trade-list" id="doublonsList"></div>
+        </div>
+        <div class="trade-section">
+            <h2>Recherchés (Quantité = 0)</h2>
+            <div class="trade-list" id="recherchesList"></div>
+        </div>
+    </div>
+
+    <!-- Intégration de Firebase (version modulaire) -->
+    <script type="module">
+        // Importer les modules Firebase nécessaires
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+        import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+
+        // Configuration Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBoun8Q9ORu6cE7sdM7_nU5iNbt4NVHgQA",
+            authDomain: "architouch-a4785.firebaseapp.com",
+            projectId: "architouch-a4785",
+            storageBucket: "architouch-a4785.firebasestorage.app",
+            messagingSenderId: "39007762687",
+            appId: "1:39007762687:web:a03ff1050bda5c26a4b4ca",
+            measurementId: "G-HLR9LGHPGF"
+        };
+
+        // Liste des archimonstres pour Dofus Touch
+        const archimonstres = [
+            { id: 2270, name: "Piradain le Pingre", subtitle: "(Piradain)", stage: 1, quantity: 0, status: "aucun" },
+            { id: 2271, name: "Pékeutar le Tireur", subtitle: "(Pékeutar)", stage: 2, quantity: 0, status: "aucun" },
+            { id: 2272, name: "Pichakoté le Dégoutant", subtitle: "(Pichakoté)", stage: 3, quantity: 0, status: "aucun" },
+            { id: 2273, name: "Ratlbol l'Aigri", subtitle: "(Ratlbol)", stage: 4, quantity: 0, status: "aucun" },
+            { id: 2275, name: "Ratéhaifaim le Professeur", subtitle: "(Ratéhaifaim)", stage: 5, quantity: 0, status: "aucun" },
+            { id: 2276, name: "Ribibi le Cher", subtitle: "(Ribibi)", stage: 6, quantity: 0, status: "aucun" },
+            { id: 2277, name: "Rostensyl la Cuisinière", subtitle: "(Rostensyl)", stage: 7, quantity: 0, status: "aucun" },
+            { id: 2279, name: "Sampi l'Eternel", subtitle: "(Sampi)", stage: 8, quantity: 0, status: "aucun" },
+            { id: 2280, name: "Scapé l'Epée", subtitle: "(
