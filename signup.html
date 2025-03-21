@@ -90,6 +90,13 @@
         .signup-container .login-link a:hover {
             text-decoration: underline;
         }
+
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none; /* Caché par défaut */
+        }
     </style>
 </head>
 <body>
@@ -110,6 +117,7 @@
             </div>
             <button type="submit">S'inscrire</button>
         </form>
+        <div id="errorMessage" class="error-message"></div>
         <div class="login-link">
             Déjà un compte ? <a href="index.html">Se connecter</a>
         </div>
@@ -145,10 +153,16 @@
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirmPassword').value;
+                const errorMessageDiv = document.getElementById('errorMessage');
+
+                // Réinitialiser le message d'erreur
+                errorMessageDiv.style.display = 'none';
+                errorMessageDiv.textContent = '';
 
                 // Vérifier que les mots de passe correspondent
                 if (password !== confirmPassword) {
-                    alert("Erreur : Les mots de passe ne correspondent pas.");
+                    errorMessageDiv.style.display = 'block';
+                    errorMessageDiv.textContent = "Erreur : Les mots de passe ne correspondent pas.";
                     return;
                 }
 
@@ -167,14 +181,15 @@
                         const errorCode = error.code;
                         const errorMessage = error.message;
                         console.error("Erreur d'inscription :", errorCode, errorMessage);
+                        errorMessageDiv.style.display = 'block';
                         if (errorCode === 'auth/email-already-in-use') {
-                            alert("Erreur : Cet email est déjà utilisé.");
+                            errorMessageDiv.textContent = "Erreur : Cet email est déjà utilisé.";
                         } else if (errorCode === 'auth/invalid-email') {
-                            alert("Erreur : Adresse email invalide.");
+                            errorMessageDiv.textContent = "Erreur : Adresse email invalide.";
                         } else if (errorCode === 'auth/weak-password') {
-                            alert("Erreur : Le mot de passe doit contenir au moins 6 caractères.");
+                            errorMessageDiv.textContent = "Erreur : Le mot de passe doit contenir au moins 6 caractères.";
                         } else {
-                            alert('Erreur : ' + errorMessage);
+                            errorMessageDiv.textContent = "Erreur : " + errorMessage;
                         }
                     });
             });
