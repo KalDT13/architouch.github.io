@@ -114,8 +114,8 @@
     <!-- Intégration de Firebase (version modulaire) -->
     <script type="module">
         // Importer les modules Firebase nécessaires
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
 
         // Configuration Firebase
         const firebaseConfig = {
@@ -131,8 +131,9 @@
         // Initialisation de Firebase
         try {
             const app = initializeApp(firebaseConfig);
-            console.log("Firebase initialisé avec succès");
+            console.log("Firebase initialisé avec succès :", app);
             const auth = getAuth(app);
+            console.log("Auth initialisé avec succès :", auth);
 
             // Vérifier si l'utilisateur est déjà connecté
             onAuthStateChanged(auth, (user) => {
@@ -178,7 +179,7 @@
             });
         } catch (error) {
             console.error("Erreur lors de l'initialisation de Firebase :", error);
-            alert("Erreur d'initialisation de Firebase. Vérifiez la configuration.");
+            alert("Erreur d'initialisation de Firebase : " + error.message);
         }
     </script>
 </body>
