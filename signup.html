@@ -104,6 +104,10 @@
                 <label for="password">Mot de passe</label>
                 <input type="password" id="password" name="password" required>
             </div>
+            <div class="input-group">
+                <label for="confirmPassword">Confirmer le mot de passe</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required>
+            </div>
             <button type="submit">S'inscrire</button>
         </form>
         <div class="login-link">
@@ -116,19 +120,26 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
 
     <script>
-        // Configuration Firebase (remplace par ton propre firebaseConfig)
+        // Configuration Firebase
         const firebaseConfig = {
-          apiKey: "AIzaSyBoun8Q9ORu6cE7sdM7_nU5iNbt4NVHgQA",
-          authDomain: "architouch-a4785.firebaseapp.com",
-          projectId: "architouch-a4785",
-          storageBucket: "architouch-a4785.firebasestorage.app",
-          messagingSenderId: "39007762687",
-          appId: "1:39007762687:web:a03ff1050bda5c26a4b4ca",
-          measurementId: "G-HLR9LGHPGF"
+            apiKey: "AIzaSyBoun8Q9ORu6cE7sdM7_nU5iNbt4NVHgQA",
+            authDomain: "architouch-a4785.firebaseapp.com",
+            projectId: "architouch-a4785",
+            storageBucket: "architouch-a4785.firebasestorage.app",
+            messagingSenderId: "39007762687",
+            appId: "1:39007762687:web:a03ff1050bda5c26a4b4ca",
+            measurementId: "G-HLR9LGHPGF"
         };
 
         // Initialisation de Firebase
-        firebase.initializeApp(firebaseConfig);
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase initialisé avec succès");
+        } catch (error) {
+            console.error("Erreur lors de l'initialisation de Firebase :", error);
+            alert("Erreur d'initialisation de Firebase. Vérifiez la configuration.");
+        }
+
         const auth = firebase.auth();
 
         // Gestion de l'inscription
@@ -136,17 +147,38 @@
             event.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // Vérifier que les mots de passe correspondent
+            if (password !== confirmPassword) {
+                alert("Erreur : Les mots de passe ne correspondent pas.");
+                return;
+            }
+
+            console.log("Tentative d'inscription avec :", email);
 
             auth.createUserWithEmailAndPassword(email, password)
                 .then((userCredential) => {
                     // Inscription réussie
-                    alert('Inscription réussie ! Bienvenue, ' + email);
-                    window.location.href = 'index.html'; // Redirige vers la page de connexion
+                    const user = userCredential.user;
+                    console.log("Inscription réussie :", user.email);
+                    alert('Inscription réussie ! Bienvenue, ' + user.email);
+                    window.location.href = 'index.html';
                 })
                 .catch((error) => {
                     // Gestion des erreurs
+                    const errorCode = error.code;
                     const errorMessage = error.message;
-                    alert('Erreur : ' + errorMessage);
+                    console.error("Erreur d'inscription :", errorCode, errorMessage);
+                    if (errorCode === 'auth/email-already-in-use') {
+                        alert("Erreur : Cet email est déjà utilisé.");
+                    } else if (errorCode === 'auth/invalid-email') {
+                        alert("Erreur : Adresse email invalide.");
+                    } else if (errorCode === 'auth/weak-password') {
+                        alert("Erreur : Le mot de passe doit contenir au moins 6 caractères.");
+                    } else {
+                        alert('Erreur : ' + errorMessage);
+                    }
                 });
         });
     </script>
