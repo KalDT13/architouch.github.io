@@ -2,36 +2,127 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Gestion Archimonstres - Dofus Touch</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - Archimonstres Dofus Touch</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        h1 { color: #2c3e50; }
-        .monster-list { display: grid; gap: 10px; }
-        .monster { padding: 10px; background: #ecf0f1; border-radius: 5px; }
-        .filter { margin-bottom: 20px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+        }
+
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-container h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .login-container .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .login-container .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #7f8c8d;
+        }
+
+        .login-container .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .login-container .input-group input:focus {
+            border-color: #2a5298;
+        }
+
+        .login-container button {
+            width: 100%;
+            padding: 12px;
+            background: #2a5298;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .login-container button:hover {
+            background: #1e3c72;
+        }
+
+        .login-container .signup-link {
+            margin-top: 20px;
+            color: #7f8c8d;
+        }
+
+        .login-container .signup-link a {
+            color: #2a5298;
+            text-decoration: none;
+        }
+
+        .login-container .signup-link a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
-    <h1>Gestion des Archimonstres</h1>
-    <div class="filter">
-        <input type="text" id="search" placeholder="Rechercher un archimonstre...">
-    </div>
-    <div class="monster-list" id="monsterList">
-        <div class="monster"><input type="checkbox"> Bworknroll</div>
-        <div class="monster"><input type="checkbox"> Chafalolita</div>
-        <div class="monster"><input type="checkbox"> Kanigroula</div>
+    <div class="login-container">
+        <h2>Connexion</h2>
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="username">Nom d'utilisateur</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="input-group">
+                <label for="password">Mot de passe</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit">Se connecter</button>
+        </form>
+        <div class="signup-link">
+            Pas de compte ? <a href="#">S'inscrire</a>
+        </div>
     </div>
 
     <script>
-        const searchInput = document.getElementById('search');
-        const monsterList = document.getElementById('monsterList');
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Empêche le rechargement de la page
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
 
-        searchInput.addEventListener('input', function() {
-            const search = searchInput.value.toLowerCase();
-            const monsters = monsterList.getElementsByClassName('monster');
-            for (let monster of monsters) {
-                const name = monster.textContent.toLowerCase();
-                monster.style.display = name.includes(search) ? 'block' : 'none';
+            // Simulation d'une vérification (à remplacer par une vraie authentification plus tard)
+            if (username && password) {
+                alert('Connexion réussie ! Bienvenue, ' + username);
+                // Redirection vers la page des archimonstres (à créer)
+                window.location.href = 'archimonstres.html';
+            } else {
+                alert('Veuillez remplir tous les champs.');
             }
         });
     </script>
