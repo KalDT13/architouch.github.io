@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion Archimonstres - Dofus Touch</title>
+    <title>Échange - Archimonstres</title>
     <style>
         * {
             margin: 0;
@@ -54,542 +54,382 @@
             color: white;
         }
 
-        .filter {
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: center;
+        .section {
+            margin-bottom: 30px;
         }
 
-        .filter input {
-            padding: 10px;
-            width: 100%;
-            max-width: 300px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        .filter input:focus {
-            border-color: #2a5298;
-        }
-
-        .monster-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 10px;
-        }
-
-        .monster {
-            padding: 10px;
-            border-radius: 5px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-            transition: background 0.3s;
-        }
-
-        .monster.owned {
-            background: #2ecc71; /* Vert pour les archimonstres possédés */
-        }
-
-        .monster.missing {
-            background: #e74c3c; /* Rouge pour les archimonstres manquants */
-        }
-
-        .monster h3 {
-            font-size: 14px;
-            text-align: center;
+        .section h2 {
             color: white;
+            margin-bottom: 10px;
+            text-align: center;
         }
 
-        .monster p {
-            font-size: 12px;
+        .list {
+            background: #34495e;
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        .list-item {
+            padding: 10px;
+            border-bottom: 1px solid #2c3e50;
             color: #ecf0f1;
             text-align: center;
         }
 
-        .quantity-controls {
-            display: flex;
-            align-items: center;
-            gap: 5px;
+        .list-item:last-child {
+            border-bottom: none;
         }
 
-        .quantity-controls button {
-            padding: 5px 10px;
-            background: #34495e;
-            color: white;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-
-        .quantity-controls button:hover {
-            background: #2a5298;
-        }
-
-        .quantity-controls span {
-            font-size: 14px;
-            color: white;
+        .empty-message {
+            color: #ecf0f1;
+            text-align: center;
+            padding: 10px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Gestion des Archimonstres</h1>
+            <h1>Page d'Échange</h1>
             <div>
-                <button id="tradeBtn">Échanger</button>
-                <button id="logoutBtn">Déconnexion</button>
+                <button id="returnButton">Retour</button>
             </div>
         </div>
-        <div class="filter">
-            <input type="text" id="search" placeholder="Rechercher un archimonstre...">
+
+        <!-- Section Recherchés -->
+        <div class="section">
+            <h2>Recherchés (Quantité = 0)</h2>
+            <div id="wantedList" class="list"></div>
         </div>
-        <div class="monster-list" id="monsterList"></div>
+
+        <!-- Section Doublons -->
+        <div class="section">
+            <h2>Doublons (Quantité ≥ 2)</h2>
+            <div id="duplicatesList" class="list"></div>
+        </div>
     </div>
 
-    <!-- Intégration de Firebase (version modulaire) -->
-    <script type="module">
-        // Importer les modules Firebase nécessaires
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
-        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
-        import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
-
-        // Configuration Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyBoun8Q9ORu6cE7sdM7_nU5iNbt4NVHgQA",
-            authDomain: "architouch-a4785.firebaseapp.com",
-            projectId: "architouch-a4785",
-            storageBucket: "architouch-a4785.firebasestorage.app",
-            messagingSenderId: "39007762687",
-            appId: "1:39007762687:web:a03ff1050bda5c26a4b4ca",
-            measurementId: "G-HLR9LGHPGF"
-        };
-
-        // Liste des archimonstres pour Dofus Touch
+    <script>
+        // Liste des archimonstres (emplacement vide pour que tu puisses les ajouter)
         const archimonstres = [
-            { id: 2270, name: "Piradain le Pingre", subtitle: "(Piradain)", stage: 1, quantity: 0, status: "aucun" },
-            { id: 2271, name: "Pékeutar le Tireur", subtitle: "(Pékeutar)", stage: 2, quantity: 0, status: "aucun" },
-            { id: 2272, name: "Pichakoté le Dégoutant", subtitle: "(Pichakoté)", stage: 3, quantity: 0, status: "aucun" },
-            { id: 2273, name: "Ratlbol l'Aigri", subtitle: "(Ratlbol)", stage: 4, quantity: 0, status: "aucun" },
-            { id: 2275, name: "Ratéhaifaim le Professeur", subtitle: "(Ratéhaifaim)", stage: 5, quantity: 0, status: "aucun" },
-            { id: 2276, name: "Ribibi le Cher", subtitle: "(Ribibi)", stage: 6, quantity: 0, status: "aucun" },
-            { id: 2277, name: "Rostensyl la Cuisinière", subtitle: "(Rostensyl)", stage: 7, quantity: 0, status: "aucun" },
-            { id: 2279, name: "Sampi l'Eternel", subtitle: "(Sampi)", stage: 8, quantity: 0, status: "aucun" },
-            { id: 2280, name: "Scapé l'Epée", subtitle: "(Scapé)", stage: 9, quantity: 0, status: "aucun" },
-            { id: 2281, name: "Scarfayss le Balafré", subtitle: "(Scarfayss)", stage: 10, quantity: 0, status: "aucun" },
-            { id: 2282, name: "Scarouarze l'Epopée", subtitle: "(Scarouarze)", stage: 11, quantity: 0, status: "aucun" },
-            { id: 2283, name: "Scaramel le Fondant", subtitle: "(Scaramel)", stage: 12, quantity: 0, status: "aucun" },
-            { id: 2285, name: "Scorpitène l'Enflammé", subtitle: "(Scorpitène)", stage: 13, quantity: 0, status: "aucun" },
-            { id: 2286, name: "Bourdilleu le Social", subtitle: "(Bourdilleu)", stage: 14, quantity: 0, status: "aucun" },
-            { id: 2287, name: "Serpistule le Purulent", subtitle: "(Serpistule)", stage: 15, quantity: 0, status: "aucun" },
-            { id: 2289, name: "Susbewl l'Hypocrite", subtitle: "(Susbewl)", stage: 16, quantity: 0, status: "aucun" },
-            { id: 2292, name: "Grokosto le Bosco", subtitle: "(Grokosto)", stage: 17, quantity: 0, status: "aucun" },
-            { id: 2293, name: "Tiwalpé le Dévêtu", subtitle: "(Tiwalpé)", stage: 18, quantity: 0, status: "aucun" },
-            { id: 2294, name: "Tiwoflan le Lâche", subtitle: "(Tiwoflan)", stage: 19, quantity: 0, status: "aucun" },
-            { id: 2295, name: "Tortenssia la Fleurie", subtitle: "(Tortenssia)", stage: 20, quantity: 0, status: "aucun" },
-            { id: 2296, name: "Tortilleur le Coulé", subtitle: "(Tortilleur)", stage: 21, quantity: 0, status: "aucun" },
-            { id: 2297, name: "Tortorak le Cornu", subtitle: "(Tortorak)", stage: 22, quantity: 0, status: "aucun" },
-            { id: 2298, name: "Torthur la Lutte", subtitle: "(Torthur)", stage: 23, quantity: 0, status: "aucun" },
-            { id: 2299, name: "Tronkoneuz la Tranchante", subtitle: "(Tronkoneuz)", stage: 24, quantity: 0, status: "aucun" },
-            { id: 2300, name: "Trooyé l'Oxydé", subtitle: "(Trooyé)", stage: 25, quantity: 0, status: "aucun" },
-            { id: 2301, name: "Trukul le Lent", subtitle: "(Trukul)", stage: 26, quantity: 0, status: "aucun" },
-            { id: 2302, name: "Vampunor le Glacial", subtitle: "(Vampunor)", stage: 27, quantity: 0, status: "aucun" },
-            { id: 2304, name: "Wabbitud le Constant", subtitle: "(Wabbitud)", stage: 28, quantity: 0, status: "aucun" },
-            { id: 2305, name: "Watdogue le Bien Nommé", subtitle: "(Watdogue)", stage: 29, quantity: 0, status: "aucun" },
-            { id: 2306, name: "Warkolad l'Etreinte", subtitle: "(Warkolad)", stage: 30, quantity: 0, status: "aucun" },
-            { id: 2307, name: "Wara l'Amer", subtitle: "(Wara)", stage: 31, quantity: 0, status: "aucun" },
-            { id: 2308, name: "Wokènrôl le Danseur", subtitle: "(Wokènrôl)", stage: 32, quantity: 0, status: "aucun" },
-            { id: 2309, name: "Abrakroc l'édenté", subtitle: "(Abrakroc)", stage: 33, quantity: 0, status: "aucun" },
-            { id: 2310, name: "Arakule la Revancharde", subtitle: "(Arakule)", stage: 34, quantity: 0, status: "aucun" },
-            { id: 2311, name: "Arabord la Cruche", subtitle: "(Arabord)", stage: 35, quantity: 0, status: "aucun" },
-            { id: 2312, name: "Arachitik la Souffreteuse", subtitle: "(Arachitik)", stage: 36, quantity: 0, status: "aucun" },
-            { id: 2313, name: "Bandapar l'Exclu", subtitle: "(Bandapar)", stage: 37, quantity: 0, status: "aucun" },
-            { id: 2314, name: "Bandson le Tonitruant", subtitle: "(Bandson)", stage: 38, quantity: 0, status: "aucun" },
-            { id: 2315, name: "Boudalf le Blanc", subtitle: "(Boudalf)", stage: 39, quantity: 0, status: "aucun" },
-            { id: 2316, name: "Boulgourvil le Lointain", subtitle: "(Boulgourvil)", stage: 40, quantity: 0, status: "aucun" },
-            { id: 2317, name: "Boufdégou le Refoulant", subtitle: "(Boufdégou)", stage: 41, quantity: 0, status: "aucun" },
-            { id: 2318, name: "Boudur le Raide", subtitle: "(Boudur)", stage: 42, quantity: 0, status: "aucun" },
-            { id: 2319, name: "Chafemal le Bagarreur", subtitle: "(Chafemal)", stage: 43, quantity: 0, status: "aucun" },
-            { id: 2320, name: "Chafmarcel le Fêtard", subtitle: "(Chafmarcel)", stage: 44, quantity: 0, status: "aucun" },
-            { id: 2321, name: "Chafalfer l'Optimiste", subtitle: "(Chafalfer)", stage: 45, quantity: 0, status: "aucun" },
-            { id: 2322, name: "Chalan le Commerçant", subtitle: "(Chalan)", stage: 46, quantity: 0, status: "aucun" },
-            { id: 2323, name: "Chamchie le Difficile", subtitle: "(Chamchie)", stage: 47, quantity: 0, status: "aucun" },
-            { id: 2324, name: "Bouflet le Puéril", subtitle: "(Bouflet)", stage: 48, quantity: 0, status: "aucun" },
-            { id: 2325, name: "Chonstip la Passagère", subtitle: "(Chonstip)", stage: 49, quantity: 0, status: "aucun" },
-            { id: 2326, name: "Craquetuss le Piquant", subtitle: "(Craquetuss)", stage: 50, quantity: 0, status: "aucun" },
-            { id: 2327, name: "Craraboss le Féérique", subtitle: "(Craraboss)", stage: 51, quantity: 0, status: "aucun" },
-            { id: 2328, name: "Forboyar l'Enigmatique", subtitle: "(Forboyar)", stage: 52, quantity: 0, status: "aucun" },
-            { id: 2331, name: "Larvapstrè le Subjectif", subtitle: "(Larvapstrè)", stage: 53, quantity: 0, status: "aucun" },
-            { id: 2332, name: "Larchimaide la Poussée", subtitle: "(Larchimaide)", stage: 54, quantity: 0, status: "aucun" },
-            { id: 2333, name: "Milipatte la Griffe", subtitle: "(Milipatte)", stage: 55, quantity: 0, status: "aucun" },
-            { id: 2334, name: "Ratatouille le Cuisinier", subtitle: "(Ratatouille)", stage: 56, quantity: 0, status: "aucun" },
-            { id: 2335, name: "Minsinistre l'Elu", subtitle: "(Minsinistre)", stage: 57, quantity: 0, status: "aucun" },
-            { id: 2336, name: "Mosketère le Dévoué", subtitle: "(Mosketère)", stage: 58, quantity: 0, status: "aucun" },
-            { id: 2337, name: "Muloufok l'Hilarant", subtitle: "(Muloufok)", stage: 59, quantity: 0, status: "aucun" },
-            { id: 2338, name: "Pichdourse le Puissant", subtitle: "(Pichdourse)", stage: 60, quantity: 0, status: "aucun" },
-            { id: 2339, name: "Picht le Brioché", subtitle: "(Picht)", stage: 61, quantity: 0, status: "aucun" },
-            { id: 2340, name: "Pichtoire l'Erudit", subtitle: "(Pichtoire)", stage: 62, quantity: 0, status: "aucun" },
-            { id: 2341, name: "Pioustone le Problème", subtitle: "(Pioustone)", stage: 63, quantity: 0, status: "aucun" },
-            { id: 2342, name: "Pioulbrineur le Mercenaire", subtitle: "(Pioulbrineur)", stage: 64, quantity: 0, status: "aucun" },
-            { id: 2343, name: "Pioufe la Maquillée", subtitle: "(Pioufe)", stage: 65, quantity: 0, status: "aucun" },
-            { id: 2344, name: "Pioulette la Coquine", subtitle: "(Pioulette)", stage: 66, quantity: 0, status: "aucun" },
-            { id: 2345, name: "Pioukas la Plante", subtitle: "(Pioukas)", stage: 67, quantity: 0, status: "aucun" },
-            { id: 2346, name: "Pichduitre le Totem", subtitle: "(Pichduitre)", stage: 68, quantity: 0, status: "aucun" },
-            { id: 2347, name: "Pioussokrim le Délétère", subtitle: "(Pioussokrim)", stage: 69, quantity: 0, status: "aucun" },
-            { id: 2348, name: "Pissdane l'Insipide", subtitle: "(Pissdane)", stage: 70, quantity: 0, status: "aucun" },
-            { id: 2349, name: "Preskapwal le Tendancieux", subtitle: "(Preskapwal)", stage: 71, quantity: 0, status: "aucun" },
-            { id: 2350, name: "Radoutable le Craint", subtitle: "(Radoutable)", stage: 72, quantity: 0, status: "aucun" },
-            { id: 2351, name: "Rauligo le Sale", subtitle: "(Rauligo)", stage: 73, quantity: 0, status: "aucun" },
-            { id: 2352, name: "Roz la Magicienne", subtitle: "(Roz)", stage: 74, quantity: 0, status: "aucun" },
-            { id: 2353, name: "Sangria le Fruité", subtitle: "(Sangria)", stage: 75, quantity: 0, status: "aucun" },
-            { id: 2354, name: "Sourizoto le Collant", subtitle: "(Sousouris Grise)", stage: 76, quantity: 0, status: "aucun" },
-            { id: 2355, name: "Tofuldebeu l'Explosif", subtitle: "(Tofuldebeu)", stage: 77, quantity: 0, status: "aucun" },
-            { id: 2356, name: "Tofurapin le Pétri", subtitle: "(Tofurapin)", stage: 78, quantity: 0, status: "aucun" },
-            { id: 2357, name: "Tofumanchou l'Empereur", subtitle: "(Tofumanchou)", stage: 79, quantity: 0, status: "aucun" },
-            { id: 2358, name: "Tour le Vice", subtitle: "(Tour)", stage: 80, quantity: 0, status: "aucun" },
-            { id: 2359, name: "Maître Onom le Régulier", subtitle: "(Maître Onom)", stage: 81, quantity: 0, status: "aucun" },
-            { id: 2360, name: "Ecorfé la Vive", subtitle: "(Ecorfé)", stage: 82, quantity: 0, status: "aucun" },
-            { id: 2361, name: "Tourbiket le Virevoletant", subtitle: "(Tourbiket)", stage: 83, quantity: 0, status: "aucun" },
-            { id: 2363, name: "Bouliver le Géant", subtitle: "(Bouliver)", stage: 84, quantity: 0, status: "aucun" },
-            { id: 2367, name: "Dragstore le Généraliste", subtitle: "(Dragstore)", stage: 85, quantity: 0, status: "aucun" },
-            { id: 2368, name: "Dragtula l'Ancien", subtitle: "(Dragtula)", stage: 86, quantity: 0, status: "aucun" },
-            { id: 2369, name: "Dragstik le Frustre", subtitle: "(Dragstik)", stage: 87, quantity: 0, status: "aucun" },
-            { id: 2371, name: "Geloliaine l'Aérien", subtitle: "(Geloliaine)", stage: 88, quantity: 0, status: "aucun" },
-            { id: 2372, name: "Dragmoclaiss le Fataliste", subtitle: "(Dragmoclaiss)", stage: 89, quantity: 0, status: "aucun" },
-            { id: 2373, name: "Champoul l'Illuminé", subtitle: "(Champoul)", stage: 90, quantity: 0, status: "aucun" },
-            { id: 2376, name: "Gelaviv le Glaçon", subtitle: "(Gelaviv)", stage: 91, quantity: 0, status: "aucun" },
-            { id: 2377, name: "Dragstayr le Fonceur", subtitle: "(Dragstayr)", stage: 92, quantity: 0, status: "aucun" },
-            { id: 2378, name: "Cromikay le Néophyte", subtitle: "(Cromikay)", stage: 93, quantity: 0, status: "aucun" },
-            { id: 2379, name: "Draglida la Disparue", subtitle: "(Draglida)", stage: 94, quantity: 0, status: "aucun" },
-            { id: 2381, name: "Abrinos le Clair", subtitle: "(Abrinos)", stage: 95, quantity: 0, status: "aucun" },
-            { id: 2382, name: "Toutouf le Velu", subtitle: "(Toutouf)", stage: 96, quantity: 0, status: "aucun" },
-            { id: 2383, name: "Poolopo la Traditionnelle", subtitle: "(Poolopo)", stage: 97, quantity: 0, status: "aucun" },
-            { id: 2384, name: "Aboudbra le Porteur", subtitle: "(Aboudbra)", stage: 98, quantity: 0, status: "aucun" },
-            { id: 2385, name: "Abrakadnuzar", subtitle: "(Abrakadnuzar)", stage: 99, quantity: 0, status: "aucun" },
-            { id: 2386, name: "Abraklette le Fondant", subtitle: "(Abraklette)", stage: 100, quantity: 0, status: "aucun" },
-            { id: 2388, name: "Abrakanette l'Encapsulé", subtitle: "(Abrakanette)", stage: 101, quantity: 0, status: "aucun" },
-            { id: 2389, name: "Abrakildas le Vénérable", subtitle: "(Abrakildas)", stage: 102, quantity: 0, status: "aucun" },
-            { id: 2391, name: "Ameur la Laide", subtitle: "(Ameur)", stage: 103, quantity: 0, status: "aucun" },
-            { id: 2393, name: "Araknay la Galopante", subtitle: "(Araknay)", stage: 104, quantity: 0, status: "aucun" },
-            { id: 2396, name: "Bistou le Quêteur", subtitle: "(Bistou)", stage: 105, quantity: 0, status: "aucun" },
-            { id: 2397, name: "Porfavor le Quémandeur", subtitle: "(Porfavor)", stage: 106, quantity: 0, status: "aucun" },
-            { id: 2399, name: "Bilvoezé le Bonimenteur", subtitle: "(Bilvoezé)", stage: 107, quantity: 0, status: "aucun" },
-            { id: 2400, name: "Bi le Partageur", subtitle: "(Bi)", stage: 108, quantity: 0, status: "aucun" },
-            { id: 2401, name: "Bistou le Rieur", subtitle: "(Bistou)", stage: 109, quantity: 0, status: "aucun" },
-            { id: 2402, name: "Tiwa'Missou le Gateux", subtitle: "(Tiwa'Missou)", stage: 110, quantity: 0, status: "aucun" },
-            { id: 2403, name: "Wagnagnah le Sanglant", subtitle: "(Wagnagnah)", stage: 111, quantity: 0, status: "aucun" },
-            { id: 2404, name: "Blorie L'assourdissante", subtitle: "(Blorie)", stage: 112, quantity: 0, status: "aucun" },
-            { id: 2405, name: "Blordur l'Infect", subtitle: "(Blordur)", stage: 113, quantity: 0, status: "aucun" },
-            { id: 2406, name: "Bloporte le Veule", subtitle: "(Bloporte)", stage: 114, quantity: 0, status: "aucun" },
-            { id: 2407, name: "Blof l'Apathique", subtitle: "(Blof)", stage: 115, quantity: 0, status: "aucun" },
-            { id: 2408, name: "Boombata le Garde", subtitle: "(Boombata)", stage: 116, quantity: 0, status: "aucun" },
-            { id: 2416, name: "Bworkasse le Dégoutant", subtitle: "(Bworkasse)", stage: 117, quantity: 0, status: "aucun" },
-            { id: 2417, name: "Barchwork le Multicolore", subtitle: "(Barchwork)", stage: 118, quantity: 0, status: "aucun" },
-            { id: 2418, name: "Bwormage le Respectueux", subtitle: "(Bwormage)", stage: 119, quantity: 0, status: "aucun" },
-            { id: 2419, name: "Caboume l'Artilleur", subtitle: "(Caboume)", stage: 120, quantity: 0, status: "aucun" },
-            { id: 2420, name: "Cavordemal le Sorcier", subtitle: "(Cavordemal)", stage: 121, quantity: 0, status: "aucun" },
-            { id: 2421, name: "Chaffoin le Sournois", subtitle: "(Chaffoin)", stage: 122, quantity: 0, status: "aucun" },
-            { id: 2422, name: "Chafrit le Barbare", subtitle: "(Chafrit)", stage: 123, quantity: 0, status: "aucun" },
-            { id: 2423, name: "Chamitant le Dillettante", subtitle: "(Chamitant)", stage: 124, quantity: 0, status: "aucun" },
-            { id: 2424, name: "Champayt l'Odorant", subtitle: "(Champayt)", stage: 125, quantity: 0, status: "aucun" },
-            { id: 2425, name: "Chamflay le Ballonné", subtitle: "(Chamflay)", stage: 126, quantity: 0, status: "aucun" },
-            { id: 2426, name: "Chamdblé le Cultivé", subtitle: "(Chamdblé)", stage: 127, quantity: 0, status: "aucun" },
-            { id: 2427, name: "Champayr le Disjoncté", subtitle: "(Champayr)", stage: 128, quantity: 0, status: "aucun" },
-            { id: 2428, name: "Crok le Beau", subtitle: "(Crok)", stage: 129, quantity: 0, status: "aucun" },
-            { id: 2429, name: "Koamag'oel le Défiguré", subtitle: "(Koamag'oel)", stage: 130, quantity: 0, status: "aucun" },
-            { id: 2430, name: "Chevaustine le Reconstruit", subtitle: "(Chevaustine)", stage: 131, quantity: 0, status: "aucun" },
-            { id: 2431, name: "Citassaté le Service", subtitle: "(Citassaté)", stage: 132, quantity: 0, status: "aucun" },
-            { id: 2432, name: "Farlon l'Enfant", subtitle: "(Farlon)", stage: 133, quantity: 0, status: "aucun" },
-            { id: 2433, name: "Codenlgaz le Problème", subtitle: "(Codenlgaz)", stage: 134, quantity: 0, status: "aucun" },
-            { id: 2436, name: "Crakmitaine le Faucheur", subtitle: "(Crakmitaine)", stage: 135, quantity: 0, status: "aucun" },
-            { id: 2437, name: "Corpat le Vampire", subtitle: "(Corpat)", stage: 136, quantity: 0, status: "aucun" },
-            { id: 2438, name: "Cramikaz le Suicidaire", subtitle: "(Cramikaz)", stage: 137, quantity: 0, status: "aucun" },
-            { id: 2439, name: "Crolnareff l'Exilé", subtitle: "(Crolnareff)", stage: 138, quantity: 0, status: "aucun" },
-            { id: 2440, name: "Crognan le Barbare", subtitle: "(Crognan)", stage: 139, quantity: 0, status: "aucun" },
-            { id: 2442, name: "Doktopuss le Maléfique", subtitle: "(Doktopuss)", stage: 140, quantity: 0, status: "aucun" },
-            { id: 2445, name: "Dragoeth le Penseur", subtitle: "(Dragoeth)", stage: 141, quantity: 0, status: "aucun" },
-            { id: 2446, name: "Dragma le Bouillant", subtitle: "(Dragma)", stage: 142, quantity: 0, status: "aucun" },
-            { id: 2447, name: "Dragtonien le Malvoyant", subtitle: "(Dragtonien)", stage: 143, quantity: 0, status: "aucun" },
-            { id: 2448, name: "Dragoo le Cramoisi", subtitle: "(Dragoo)", stage: 144, quantity: 0, status: "aucun" },
-            { id: 2449, name: "Dragnostik le Sceptique", subtitle: "(Dragnostik)", stage: 145, quantity: 0, status: "aucun" },
-            { id: 2450, name: "Dragkouine la Magnifique", subtitle: "(Dragkouine)", stage: 146, quantity: 0, status: "aucun" },
-            { id: 2451, name: "Dragsta le Détendu", subtitle: "(Dragsta)", stage: 147, quantity: 0, status: "aucun" },
-            { id: 2452, name: "Dragobert le Monarque", subtitle: "(Dragobert)", stage: 148, quantity: 0, status: "aucun" },
-            { id: 2453, name: "Dragtopaile l'Excavateur", subtitle: "(Dragtopaile)", stage: 149, quantity: 0, status: "aucun" },
-            { id: 2454, name: "Dragminster le Magicien", subtitle: "(Dragminster)", stage: 150, quantity: 0, status: "aucun" },
-            { id: 2455, name: "Dragalgan l'Effervescent", subtitle: "(Dragalgan)", stage: 151, quantity: 0, status: "aucun" },
-            { id: 2456, name: "Dragtarus le Bellâtre", subtitle: "(Dragtarus)", stage: 152, quantity: 0, status: "aucun" },
-            { id: 2457, name: "Dragybuss le Sucré", subtitle: "(Dragybuss)", stage: 153, quantity: 0, status: "aucun" },
-            { id: 2458, name: "Draquetteur le Voleur", subtitle: "(Draquetteur)", stage: 154, quantity: 0, status: "aucun" },
-            { id: 2459, name: "Dragioli le Succulent", subtitle: "(Dragioli)", stage: 155, quantity: 0, status: "aucun" },
-            { id: 2460, name: "Drageaufol la Joyeuse", subtitle: "(Drageaufol)", stage: 156, quantity: 0, status: "aucun" },
-            { id: 2461, name: "Dragonienne l'Econome", subtitle: "(Dragonienne)", stage: 157, quantity: 0, status: "aucun" },
-            { id: 2462, name: "Drakolage le Tentateur", subtitle: "(Drakolage)", stage: 158, quantity: 0, status: "aucun" },
-            { id: 2464, name: "Dragdikal le Décisif", subtitle: "(Dragdikal)", stage: 159, quantity: 0, status: "aucun" },
-            { id: 2465, name: "Dragnoute l'Irascible", subtitle: "(Dragnoute)", stage: 160, quantity: 0, status: "aucun" },
-            { id: 2466, name: "Fanlabiz le Véloce", subtitle: "(Fanlabiz)", stage: 161, quantity: 0, status: "aucun" },
-            { id: 2467, name: "Fandanleuil le Précis", subtitle: "(Fandanleuil)", stage: 162, quantity: 0, status: "aucun" },
-            { id: 2468, name: "Fantrask le Rêveur", subtitle: "(Fantrask)", stage: 163, quantity: 0, status: "aucun" },
-            { id: 2482, name: "Fossamoel le Juteux", subtitle: "(Fossamoel)", stage: 164, quantity: 0, status: "aucun" },
-            { id: 2484, name: "Fourapin le Chaud", subtitle: "(Fourapin)", stage: 165, quantity: 0, status: "aucun" },
-            { id: 2486, name: "Garsim le Mort", subtitle: "(Garsim)", stage: 166, quantity: 0, status: "aucun" },
-            { id: 2487, name: "Gelanal le Huileux", subtitle: "(Gelanal)", stage: 167, quantity: 0, status: "aucun" },
-            { id: 2493, name: "Ginsenk le Stimulant", subtitle: "(Ginsenk)", stage: 168, quantity: 0, status: "aucun" },
-            { id: 2494, name: "Gobstiniais le Têtu", subtitle: "(Gobstiniais)", stage: 169, quantity: 0, status: "aucun" },
-            { id: 2495, name: "Gloubibou le Gars", subtitle: "(Gloubibou)", stage: 170, quantity: 0, status: "aucun" },
-            { id: 2497, name: "Guerrite le Veilleur", subtitle: "(Guerrite)", stage: 171, quantity: 0, status: "aucun" },
-            { id: 2498, name: "Grandilok le Clameur", subtitle: "(Grandilok)", stage: 172, quantity: 0, status: "aucun" },
-            { id: 2502, name: "Kannibal le Lecteur", subtitle: "(Kannibal)", stage: 173, quantity: 0, status: "aucun" },
-            { id: 2503, name: "Kanasukr le Mielleux", subtitle: "(Kanasukr)", stage: 174, quantity: 0, status: "aucun" },
-            { id: 2505, name: "Kannémik le Maigre", subtitle: "(Kannémik)", stage: 175, quantity: 0, status: "aucun" },
-            { id: 2506, name: "Kannisterik le Forcené", subtitle: "(Kannisterik)", stage: 176, quantity: 0, status: "aucun" },
-            { id: 2507, name: "Kapota la Fraise", subtitle: "(Kapota)", stage: 177, quantity: 0, status: "aucun" },
-            { id: 2508, name: "Kiroyal le Sirupeux", subtitle: "(Kiroyal)", stage: 178, quantity: 0, status: "aucun" },
-            { id: 2509, name: "Koaskette la Chapelière", subtitle: "(Koaskette)", stage: 179, quantity: 0, status: "aucun" },
-            { id: 2513, name: "Koamaembair le Coulant", subtitle: "(Koamaembair)", stage: 180, quantity: 0, status: "aucun" },
-            { id: 2514, name: "Koalaboi le Calorifère", subtitle: "(Koalaboi)", stage: 181, quantity: 0, status: "aucun" },
-            { id: 2515, name: "Koasossyal le Psychopathe", subtitle: "(Koasossyal)", stage: 182, quantity: 0, status: "aucun" },
-            { id: 2516, name: "Koakofrui le Confit", subtitle: "(Koakofrui)", stage: 183, quantity: 0, status: "aucun" },
-            { id: 2517, name: "Koalastrof la Naturelle", subtitle: "(Koalastrof)", stage: 184, quantity: 0, status: "aucun" },
-            { id: 2518, name: "Koarmit la Batracienne", subtitle: "(Koarmit)", stage: 185, quantity: 0, status: "aucun" },
-            { id: 2519, name: "Koalvissie le Chauve", subtitle: "(Koalvissie)", stage: 186, quantity: 0, status: "aucun" },
-            { id: 2520, name: "Kolforthe l'Indécollable", subtitle: "(Kolforthe)", stage: 187, quantity: 0, status: "aucun" },
-            { id: 2521, name: "Krapahut le Randonneur", subtitle: "(Krapahut)", stage: 188, quantity: 0, status: "aucun" },
-            { id: 2522, name: "Kwoanneur le Frimeur", subtitle: "(Kwoanneur)", stage: 189, quantity: 0, status: "aucun" },
-            { id: 2524, name: "Ouassébo l'Esthète", subtitle: "(Ouassébo)", stage: 190, quantity: 0, status: "aucun" },
-            { id: 2525, name: "Let le Rond", subtitle: "(Let)", stage: 191, quantity: 0, status: "aucun" },
-            { id: 2528, name: "Mamakomou l'Âge", subtitle: "(Mamakomou)", stage: 192, quantity: 0, status: "aucun" },
-            { id: 2529, name: "Mandalo l'Aqueuse", subtitle: "(Mandalo)", stage: 193, quantity: 0, status: "aucun" },
-            { id: 2531, name: "Maître Koantik le Théoricien", subtitle: "(Maître Koantik)", stage: 194, quantity: 0, status: "aucun" },
-            { id: 2532, name: "Maître Amboat le Moqueur", subtitle: "(Maître Amboat)", stage: 195, quantity: 0, status: "aucun" },
-            { id: 2533, name: "Minoskour le Sauveur", subtitle: "(Minoskour)", stage: 196, quantity: 0, status: "aucun" },
-            { id: 2534, name: "Momikonos la Bandelette", subtitle: "(Momikonos)", stage: 197, quantity: 0, status: "aucun" },
-            { id: 2538, name: "Nakuneuye le Borgne", subtitle: "(Nakuneuye)", stage: 198, quantity: 0, status: "aucun" },
-            { id: 2539, name: "Nelvin le Boulet", subtitle: "(Nelvin)", stage: 199, quantity: 0, status: "aucun" },
-            { id: 2540, name: "Nipulnislip l'Exhibitionniste", subtitle: "(Nipulnislip)", stage: 200, quantity: 0, status: "aucun" },
-            { id: 2541, name: "NodKoku le Trahi", subtitle: "(NodKoku)", stage: 201, quantity: 0, status: "aucun" },
-            { id: 2542, name: "Neufedur le Flottant", subtitle: "(Neufedur)", stage: 202, quantity: 0, status: "aucun" },
-            { id: 2543, name: "Onihylis le Destructeur", subtitle: "(Onihylis)", stage: 203, quantity: 0, status: "aucun" },
-            { id: 2544, name: "Abrakine le Sombre", subtitle: "(Abrakine)", stage: 204, quantity: 0, status: "aucun" },
-            { id: 2545, name: "Barebourd le Comte", subtitle: "(Barebourd)", stage: 205, quantity: 0, status: "aucun" },
-            { id: 2546, name: "Bitoven le Musicien", subtitle: "(Bitoven)", stage: 206, quantity: 0, status: "aucun" },
-            { id: 2547, name: "Toufou le Benêt", subtitle: "(Toufou)", stage: 207, quantity: 0, status: "aucun" },
-            { id: 2549, name: "Boostif l'Affamé", subtitle: "(Boostif)", stage: 208, quantity: 0, status: "aucun" },
-            { id: 2550, name: "Brouste l'Humiliant", subtitle: "(Brouste)", stage: 209, quantity: 0, status: "aucun" },
-            { id: 2551, name: "Champolyon le Polyglotte", subtitle: "(Champolyon)", stage: 210, quantity: 0, status: "aucun" },
-            { id: 2552, name: "Chamoute le Duveteux", subtitle: "(Chamoute)", stage: 211, quantity: 0, status: "aucun" },
-            { id: 2553, name: "Chamilero le Malchanceux", subtitle: "(Chamilero)", stage: 212, quantity: 0, status: "aucun" },
-            { id: 2554, name: "Chiendanlémin l'Illusionniste", subtitle: "(Chiendanlémin)", stage: 213, quantity: 0, status: "aucun" },
-            { id: 2555, name: "Corboyard l'Enigmatique", subtitle: "(Corboyard)", stage: 214, quantity: 0, status: "aucun" },
-            { id: 2556, name: "Craquetou le Fissuré", subtitle: "(Craquetou)", stage: 215, quantity: 0, status: "aucun" },
-            { id: 2557, name: "Crustterus l'Organique", subtitle: "(Crustterus)", stage: 216, quantity: 0, status: "aucun" },
-            { id: 2558, name: "Crustensyl le Pragmatique", subtitle: "(Crustensyl)", stage: 217, quantity: 0, status: "aucun" },
-            { id: 2559, name: "Cruskof le Rustre", subtitle: "(Cruskof)", stage: 218, quantity: 0, status: "aucun" },
-            { id: 2560, name: "Crusmeyer le Pervers", subtitle: "(Crusmeyer)", stage: 219, quantity: 0, status: "aucun" },
-            { id: 2561, name: "Crathdogue le Cruel", subtitle: "(Crathdogue)", stage: 220, quantity: 0, status: "aucun" },
-            { id: 2562, name: "Diskord le Belliqueux", subtitle: "(Diskord)", stage: 221, quantity: 0, status: "aucun" },
-            { id: 2563, name: "Fantoch le Pantin", subtitle: "(Fantoch)", stage: 222, quantity: 0, status: "aucun" },
-            { id: 2565, name: "Floanna la Blonde", subtitle: "(Floanna)", stage: 223, quantity: 0, status: "aucun" },
-            { id: 2566, name: "Gastroth la Contagieuse", subtitle: "(Gastroth)", stage: 224, quantity: 0, status: "aucun" },
-            { id: 2567, name: "Faufoll la Joyeuse", subtitle: "(Faufoll)", stage: 225, quantity: 0, status: "aucun" },
-            { id: 2568, name: "Germinol l'Indigent", subtitle: "(Germinol)", stage: 226, quantity: 0, status: "aucun" },
-            { id: 2569, name: "Guerumoth le Collant", subtitle: "(Guerumoth)", stage: 227, quantity: 0, status: "aucun" },
-            { id: 2570, name: "Kaskapointhe la Couverte", subtitle: "(Kaskapointhe)", stage: 228, quantity: 0, status: "aucun" },
-            { id: 2571, name: "Kido l'Âtre", subtitle: "(Kido)", stage: 229, quantity: 0, status: "aucun" },
-            { id: 2572, name: "Kilimanj'haro le Grimpeur", subtitle: "(Kilimanj'haro)", stage: 230, quantity: 0, status: "aucun" },
-            { id: 2573, name: "Koktèle le Secoué", subtitle: "(Koktèle)", stage: 231, quantity: 0, status: "aucun" },
-            { id: 2574, name: "Larvonika l'Instrument", subtitle: "(Larvonika)", stage: 232, quantity: 0, status: "aucun" },
-            { id: 2575, name: "Ouashouash l'Exubérant", subtitle: "(Ouashouash)", stage: 233, quantity: 0, status: "aucun" },
-            { id: 2577, name: "Meuroup le Prêtre", subtitle: "(Meuroup)", stage: 234, quantity: 0, status: "aucun" },
-            { id: 2578, name: "Don Kizoth l'Obstiné", subtitle: "(Don Kizoth)", stage: 235, quantity: 0, status: "aucun" },
-            { id: 2579, name: "Nerdeubeu le Flagellant", subtitle: "(Nerdeubeu)", stage: 236, quantity: 0, status: "aucun" },
-            { id: 2580, name: "Mufguedin le Suprême", subtitle: "(Mufguedin)", stage: 237, quantity: 0, status: "aucun" },
-            { id: 2581, name: "Palmbytch la Bronzée", subtitle: "(Palmbytch)", stage: 238, quantity: 0, status: "aucun" },
-            { id: 2582, name: "Palmito le Menteur", subtitle: "(Palmito)", stage: 239, quantity: 0, status: "aucun" },
-            { id: 2583, name: "Palmiche le Serein", subtitle: "(Palmiche)", stage: 240, quantity: 0, status: "aucun" },
-            { id: 2584, name: "Palmiflette le Convivial", subtitle: "(Palmiflette)", stage: 241, quantity: 0, status: "aucun" },
-            { id: 2585, name: "Osuxion le Vampirique", subtitle: "(Osuxion)", stage: 242, quantity: 0, status: "aucun" },
-            { id: 2587, name: "Seripoth l'Ennemi", subtitle: "(Seripoth)", stage: 243, quantity: 0, status: "aucun" },
-            { id: 2588, name: "Sparoket le Lanceur", subtitle: "(Sparoket)", stage: 244, quantity: 0, status: "aucun" },
-            { id: 2589, name: "Ougaould le Parasite", subtitle: "(Ougaould)", stage: 245, quantity: 0, status: "aucun" },
-            { id: 2600, name: "Champmé le Méchant", subtitle: "(Champmé)", stage: 246, quantity: 0, status: "aucun" },
-            { id: 2601, name: "Tromplamor le Survivant", subtitle: "(Tromplamor)", stage: 247, quantity: 0, status: "aucun" },
-            { id: 2614, name: "Roy le Merlin", subtitle: "(Roy)", stage: 248, quantity: 0, status: "aucun" },
-            { id: 2615, name: "Scaratyn l'huitre", subtitle: "(Scaratyn)", stage: 249, quantity: 0, status: "aucun" },
-            { id: 2616, name: "Ouature la Mobile", subtitle: "(Ouature)", stage: 250, quantity: 0, status: "aucun" },
-            { id: 3178, name: "Krokette la Croustillante", subtitle: "(Krokette)", stage: 251, quantity: 0, status: "aucun" },
-            { id: 3179, name: "Krokillage la Marine", subtitle: "(Krokillage)", stage: 252, quantity: 0, status: "aucun" },
-            { id: 3180, name: "Krokcinelle la Tâchetée", subtitle: "(Krokcinelle)", stage: 253, quantity: 0, status: "aucun" },
-            { id: 3181, name: "Krokis l'Esquissée", subtitle: "(Krokis)", stage: 254, quantity: 0, status: "aucun" },
-            { id: 3182, name: "Krokblanche l'Immaculée", subtitle: "(Krokblanche)", stage: 255, quantity: 0, status: "aucun" },
-            { id: 3183, name: "Krokenjambe la Tombeuse", subtitle: "(Krokenjambe)", stage: 256, quantity: 0, status: "aucun" },
-            { id: 3184, name: "Kroktail la Désaltérante", subtitle: "(Kroktail)", stage: 257, quantity: 0, status: "aucun" },
-            { id: 3185, name: "Krokotte la Minutée", subtitle: "(Krokotte)", stage: 258, quantity: 0, status: "aucun" },
-            { id: 3186, name: "Krokée l'Entamée", subtitle: "(Krokée)", stage: 259, quantity: 0, status: "aucun" },
-            { id: 3187, name: "Krokrodaille la Mordante", subtitle: "(Krokrodaille)", stage: 260, quantity: 0, status: "aucun" },
-            { id: 3188, name: "Kroknemboure la Mousseuse", subtitle: "(Kroknemboure)", stage: 261, quantity: 0, status: "aucun" },
-            { id: 3189, name: "Krokine l'Allumeuse", subtitle: "(Krokine)", stage: 262, quantity: 0, status: "aucun" },
-            { id: 3190, name: "Krokue la Trompée", subtitle: "(Krokue)", stage: 263, quantity: 0, status: "aucun" },
-            { id: 3191, name: "Krokpit la Pilotée", subtitle: "(Krokpit)", stage: 264, quantity: 0, status: "aucun" },
-            { id: 3192, name: "Krokage la Vorace", subtitle: "(Krokage)", stage: 265, quantity: 0, status: "aucun" },
-            { id: 3193, name: "Krokillagée la Sage", subtitle: "(Krokillagée)", stage: 266, quantity: 0, status: "aucun" },
-            { id: 3194, name: "Krokuite la Calcinée", subtitle: "(Krokuite)", stage: 267, quantity: 0, status: "aucun" },
-            { id: 3195, name: "Krokobure la Maudite", subtitle: "(Krokobure)", stage: 268, quantity: 0, status: "aucun" },
-            { id: 3196, name: "Krokrane la Distordue", subtitle: "(Krokrane)", stage: 269, quantity: 0, status: "aucun" },
-            { id: 4346, name: "Arakazam la Psychique", subtitle: "(Arakazam)", stage: 270, quantity: 0, status: "aucun" },
-            { id: 4348, name: "Saltoavan la Gymnaste", subtitle: "(Saltoavan)", stage: 271, quantity: 0, status: "aucun" },
-            { id: 4350, name: "Gargantua la Dévoreuse", subtitle: "(Gargantua)", stage: 272, quantity: 0, status: "aucun" },
-            { id: 4352, name: "Dardamel la Kidnappeuse", subtitle: "(Dardamel)", stage: 273, quantity: 0, status: "aucun" },
-            { id: 4354, name: "Arapliké la Calligraphe", subtitle: "(Arapliké)", stage: 274, quantity: 0, status: "aucun" },
-            { id: 4457, name: "Onistérique le déchainé", subtitle: "(Onistérique)", stage: 275, quantity: 0, status: "aucun" },
-            { id: 4459, name: "Sakkado la transporteuse", subtitle: "(Sakkado)", stage: 276, quantity: 0, status: "aucun" },
-            { id: 4461, name: "Kaenekfeu le volubile", subtitle: "(Kaenekfeu)", stage: 277, quantity: 0, status: "aucun" },
-            { id: 4463, name: "Nanashi le virtuose", subtitle: "(Nanashi)", stage: 278, quantity: 0, status: "aucun" },
-            { id: 4465, name: "KMarude l'ensablé", subtitle: "(Marude)", stage: 279, quantity: 0, status: "aucun" }
+            // Étape 20
+            { id: 2310, name: "Arakule la Revancharde", subtitle: "(Arakule)", stage: 20, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2279, name: "Arachitik la Souffreteuse", subtitle: "(Arachitik)", stage: 20, quantity: 0, status: "aucun", zone: "Astrub" },
+            { id: 2275, name: "Boudalf le Blanc", subtitle: "(Boudalf)", stage: 20, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2276, name: "Boulgourvil le Lointain", subtitle: "(Boulgourvil)", stage: 20, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2285, name: "Craraboss le Féérique", subtitle: "(Craraboss)", stage: 20, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2286, name: "Larvonika l'Instrument", subtitle: "(Larvonika)", stage: 20, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2294, name: "Mosketère le Dévoué", subtitle: "(Mosketère)", stage: 20, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2287, name: "Pioufe la Maquillée", subtitle: "(Pioufe)", stage: 20, quantity: 0, status: "aucun", zone: "Astrub" },
+            { id: 2281, name: "Pioukas la Plante", subtitle: "(Pioukas)", stage: 20, quantity: 0, status: "aucun", zone: "Astrub" },
+            { id: 2280, name: "Pioulette la Coquine", subtitle: "(Pioulette)", stage: 20, quantity: 0, status: "aucun", zone: "Astrub" },
+            { id: 2278, name: "Pioulbrineur le Mercenaire", subtitle: "(Pioulbrineur)", stage: 20, quantity: 0, status: "aucun", zone: "Astrub" },
+            { id: 2277, name: "Pioustone le Problème", subtitle: "(Pioustone)", stage: 20, quantity: 0, status: "aucun", zone: "Astrub" },
+            { id: 2284, name: "Pioussokrim le Délétère", subtitle: "(Pioussokrim)", stage: 20, quantity: 0, status: "aucun", zone: "Astrub" },
+            { id: 2295, name: "Pissdane l'Insipide", subtitle: "(Pissdane)", stage: 20, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2271, name: "Sourizoto le Collant", subtitle: "(Sourizoto)", stage: 20, quantity: 0, status: "aucun", zone: "Astrub" },
+            { id: 2296, name: "Tofuldebeu l'Explosif", subtitle: "(Tofuldebeu)", stage: 20, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2293, name: "Tofumanchou l'Empereur", subtitle: "(Tofumanchou)", stage: 20, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2356, name: "Tofurapin le Pétri", subtitle: "(Tofurapin)", stage: 20, quantity: 0, status: "aucun", zone: "Astrub" },
+            
+            // Étape 21
+            { id: 2297, name: "Bandapar l'Exclu", subtitle: "(Bandapar)", stage: 21, quantity: 0, status: "aucun", zone: "Astrub" },
+            { id: 2312, name: "Bandson le Tonitruant", subtitle: "(Bandson)", stage: 21, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2286, name: "Bourdilleu le Social", subtitle: "(Bourdilleu)", stage: 21, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2301, name: "Boufdégou le Refoulant", subtitle: "(Boufdégou)", stage: 21, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2308, name: "Boudur le Raide", subtitle: "(Boudur)", stage: 21, quantity: 0, status: "aucun", zone: "Brâkmar" },
+            { id: 2299, name: "Chamchie le Difficile", subtitle: "(Chamchie)", stage: 21, quantity: 0, status: "aucun", zone: "Bonta" },
+            { id: 2304, name: "Gelanal le Huileux", subtitle: "(Gelanal)", stage: 21, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2305, name: "Geloliaine l'Aérien", subtitle: "(Geloliaine)", stage: 21, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2313, name: "Gobstiniais le Têtu", subtitle: "(Gobstiniais)", stage: 21, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2292, name: "Grokosto le Bosco", subtitle: "(Grokosto)", stage: 21, quantity: 0, status: "aucun", zone: "L'île de Moon" },
+            { id: 2302, name: "Kolforthe l'Indécollable", subtitle: "(Kolforthe)", stage: 21, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2300, name: "Kwoanneur le Frimeur", subtitle: "(Kwoanneur)", stage: 21, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2306, name: "Larchimaide la Poussée", subtitle: "(Larchimaide)", stage: 21, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2307, name: "Larvapstrè le Subjectif", subtitle: "(Larvapstrè)", stage: 21, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2314, name: "NodKoku le Trahi", subtitle: "(NodKoku)", stage: 21, quantity: 0, status: "aucun", zone: "L'île de Moon" },
+            { id: 2298, name: "Roz la Magicienne", subtitle: "(Roz)", stage: 21, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2309, name: "Tiwa'Missou le Gateux", subtitle: "(Tiwa'Missou)", stage: 21, quantity: 0, status: "aucun", zone: "L'île des Wabbits" },
+            { id: 2293, name: "Tiwalpé le Dévêtu", subtitle: "(Tiwalpé)", stage: 21, quantity: 0, status: "aucun", zone: "L'île des Wabbits" },
+            { id: 2294, name: "Tiwoflan le Lâche", subtitle: "(Tiwoflan)", stage: 21, quantity: 0, status: "aucun", zone: "L'île des Wabbits" },
+            { id: 2303, name: "Tour le Vice", subtitle: "(Tour)", stage: 21, quantity: 0, status: "aucun", zone: "Bonta" },
+            { id: 2300, name: "Trooyé l'Oxydé", subtitle: "(Trooyé)", stage: 21, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2301, name: "Trukul le Lent", subtitle: "(Trukul)", stage: 21, quantity: 0, status: "aucun", zone: "L'île de Moon" },
+            
+            // Étape 22
+            { id: 2327, name: "Bandson le Tonitruant", subtitle: "(Bandson)", stage: 22, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2322, name: "Bi le Partageur", subtitle: "(Bi)", stage: 22, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2323, name: "Bilvoezé le Bonimenteur", subtitle: "(Bilvoezé)", stage: 22, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2328, name: "Bistou le Quêteur", subtitle: "(Bistou)", stage: 22, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2324, name: "Bistou le Rieur", subtitle: "(Bistou)", stage: 22, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2329, name: "Boostif l'Affamé", subtitle: "(Boostif)", stage: 22, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
+            { id: 2336, name: "Bouflet le Puéril", subtitle: "(Bouflet)", stage: 22, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2318, name: "Champayr le Disjoncté", subtitle: "(Champayr)", stage: 22, quantity: 0, status: "aucun", zone: "Forêt des Abraknydes" },
+            { id: 2325, name: "Chevaustine le Reconstruit", subtitle: "(Chevaustine)", stage: 22, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2320, name: "Chonstip la Passagère", subtitle: "(Chonstip)", stage: 22, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2319, name: "Citassaté le Service", subtitle: "(Citassaté)", stage: 22, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2337, name: "Cromikay le Néophyte", subtitle: "(Cromikay)", stage: 22, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2326, name: "Milipussien le Géant", subtitle: "(Milipussien)", stage: 22, quantity: 0, status: "aucun", zone: "Astrub" },
+            { id: 2331, name: "Porfavor le Quémandeur", subtitle: "(Porfavor)", stage: 22, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2317, name: "Sangria le Fruité", subtitle: "(Sangria)", stage: 22, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2338, name: "Tortenssia la Fleurie", subtitle: "(Tortenssia)", stage: 22, quantity: 0, status: "aucun", zone: "L'île de Moon" },
+            { id: 2333, name: "Torthur la Lutte", subtitle: "(Torthur)", stage: 22, quantity: 0, status: "aucun", zone: "L'île de Moon" },
+            { id: 2302, name: "Vampunor le Glacial", subtitle: "(Vampunor)", stage: 22, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2334, name: "Wabbitud le Constant", subtitle: "(Wabbitud)", stage: 22, quantity: 0, status: "aucun", zone: "L'île des Wabbits" },
+            
+            // Étape 23
+            { id: 2355, name: "Barchwork le Multicolore", subtitle: "(Barchwork)", stage: 23, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2350, name: "Bwormage le Respectueux", subtitle: "(Bwormage)", stage: 23, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2339, name: "Corpat le Vampire", subtitle: "(Corpat)", stage: 23, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2352, name: "Crognan le Barbare", subtitle: "(Crognan)", stage: 23, quantity: 0, status: "aucun", zone: "Brâkmar" },
+            { id: 2484, name: "Fourapin le Chaud", subtitle: "(Fourapin)", stage: 23, quantity: 0, status: "aucun", zone: "L'île de Moon" },
+            { id: 2344, name: "Maître Amboat le Moqueur", subtitle: "(Maître Amboat)", stage: 23, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2346, name: "Milipatte la Griffe", subtitle: "(Milipatte)", stage: 23, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2354, name: "Minsinistre l'Elu", subtitle: "(Minsinistre)", stage: 23, quantity: 0, status: "aucun", zone: "Brâkmar" },
+            { id: 2347, name: "Minoskour le Sauveur", subtitle: "(Minoskour)", stage: 23, quantity: 0, status: "aucun", zone: "L'île du Minotoror" },
+            { id: 2348, name: "Neufedur le Flottant", subtitle: "(Neufedur)", stage: 23, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2396, name: "Pichakoté le Dégoutant", subtitle: "(Pichakoté)", stage: 23, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2339, name: "Pichdourse le Puissant", subtitle: "(Pichdourse)", stage: 23, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2341, name: "Picht le Brioché", subtitle: "(Picht)", stage: 23, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2340, name: "Pichtoire l'Erudit", subtitle: "(Pichtoire)", stage: 23, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2342, name: "Pioustone le Problème", subtitle: "(Pioustone)", stage: 23, quantity: 0, status: "aucun", zone: "Astrub" },
+            { id: 2343, name: "Pioulette la Coquine", subtitle: "(Pioulette)", stage: 23, quantity: 0, status: "aucun", zone: "Astrub" },
+            { id: 2344, name: "Pioukas la Plante", subtitle: "(Pioukas)", stage: 23, quantity: 0, status: "aucun", zone: "Astrub" },
+            { id: 2345, name: "Pioufe la Maquillée", subtitle: "(Pioufe)", stage: 23, quantity: 0, status: "aucun", zone: "Astrub" },
+            { id: 2346, name: "Pioulbrineur le Mercenaire", subtitle: "(Pioulbrineur)", stage: 23, quantity: 0, status: "aucun", zone: "Astrub" },
+            { id: 2402, name: "Radoutable le Craint", subtitle: "(Radoutable)", stage: 23, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2353, name: "Rostensyl la Cuisinière", subtitle: "(Rostensyl)", stage: 23, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2351, name: "Wagnagnah le Sanglant", subtitle: "(Wagnagnah)", stage: 23, quantity: 0, status: "aucun", zone: "L'île des Wabbits" },
+            
+            // Étape 24
+            { id: 2373, name: "Abrakroc l'édenté", subtitle: "(Abrakroc)", stage: 24, quantity: 0, status: "aucun", zone: "Forêt des Abraknydes" },
+            { id: 2381, name: "Abrinos le Clair", subtitle: "(Abrinos)", stage: 24, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2372, name: "Bworkasse le Dégoutant", subtitle: "(Bworkasse)", stage: 24, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2357, name: "Chafalfer l'Optimiste", subtitle: "(Chafalfer)", stage: 24, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2356, name: "Champayt l'Odorant", subtitle: "(Champayt)", stage: 24, quantity: 0, status: "aucun", zone: "Forêt des Abraknydes" },
+            { id: 2358, name: "Chamflay le Ballonné", subtitle: "(Chamflay)", stage: 24, quantity: 0, status: "aucun", zone: "Forêt des Abraknydes" },
+            { id: 2359, name: "Chamdblé le Cultivé", subtitle: "(Chamdblé)", stage: 24, quantity: 0, status: "aucun", zone: "Forêt des Abraknydes" },
+            { id: 2371, name: "Crakmitaine le Faucheur", subtitle: "(Crakmitaine)", stage: 24, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2360, name: "Craquetuss le Piquant", subtitle: "(Craquetuss)", stage: 24, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2378, name: "Cromikay le Néophyte", subtitle: "(Cromikay)", stage: 24, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2367, name: "Draglida la Disparue", subtitle: "(Draglida)", stage: 24, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
+            { id: 2363, name: "Garsim le Mort", subtitle: "(Garsim)", stage: 24, quantity: 0, status: "aucun", zone: "Astrub" },
+            { id: 2368, name: "Gelaviv le Glaçon", subtitle: "(Gelaviv)", stage: 24, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2377, name: "Krapahut le Randonneur", subtitle: "(Krapahut)", stage: 24, quantity: 0, status: "aucun", zone: "L'île du Minotoror" },
+            { id: 2361, name: "Mandalo l'Aqueuse", subtitle: "(Mandalo)", stage: 24, quantity: 0, status: "aucun", zone: "L'île du Minotoror" },
+            { id: 2382, name: "Ribibi le Cher", subtitle: "(Ribibi)", stage: 24, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2380, name: "Scapé l'Epée", subtitle: "(Scapé)", stage: 24, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2379, name: "Scarfayss le Balafré", subtitle: "(Scarfayss)", stage: 24, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2381, name: "Scaramel le Fondant", subtitle: "(Scaramel)", stage: 24, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2379, name: "Scarouarze l'Epopée", subtitle: "(Scarouarze)", stage: 24, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2359, name: "Tour le Vice", subtitle: "(Tour)", stage: 24, quantity: 0, status: "aucun", zone: "Bonta" },
+            { id: 2383, name: "Toutouf le Velu", subtitle: "(Toutouf)", stage: 24, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2369, name: "Watdogue le Bien Nommé", subtitle: "(Watdogue)", stage: 24, quantity: 0, status: "aucun", zone: "L'île des Wabbits" },
+            
+            // Étape 25
+            { id: 2399, name: "Abrakadnuzar", subtitle: "(Abrakadnuzar)", stage: 25, quantity: 0, status: "aucun", zone: "Forêt des Abraknydes" },
+            { id: 2451, name: "Abrakildas le Vénérable", subtitle: "(Abrakildas)", stage: 25, quantity: 0, status: "aucun", zone: "Forêt des Abraknydes" },
+            { id: 2422, name: "Aboudbra le Porteur", subtitle: "(Aboudbra)", stage: 25, quantity: 0, status: "aucun", zone: "Territoire des Dopeuls" },
+            { id: 2421, name: "Ameur la Laide", subtitle: "(Ameur)", stage: 25, quantity: 0, status: "aucun", zone: "Territoire des Dopeuls" },
+            { id: 2393, name: "Araknay la Galopante", subtitle: "(Araknay)", stage: 25, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2400, name: "Bistou le Quêteur", subtitle: "(Bistou)", stage: 25, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2401, name: "Bistou le Rieur", subtitle: "(Bistou)", stage: 25, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2388, name: "Blof l'Apathique", subtitle: "(Blof)", stage: 25, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2384, name: "Blorie L'assourdissante", subtitle: "(Blorie)", stage: 25, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2385, name: "Blordur l'Infect", subtitle: "(Blordur)", stage: 25, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2386, name: "Bloporte le Veule", subtitle: "(Bloporte)", stage: 25, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2389, name: "Boombata le Garde", subtitle: "(Boombata)", stage: 25, quantity: 0, status: "aucun", zone: "L'île de Moon" },
+            { id: 2400, name: "Chafemal le Bagarreur", subtitle: "(Chafemal)", stage: 25, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2396, name: "Chaffoin le Sournois", subtitle: "(Chaffoin)", stage: 25, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2402, name: "Crolnareff l'Exilé", subtitle: "(Crolnareff)", stage: 25, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
+            { id: 2405, name: "Crustterus l'Organique", subtitle: "(Crustterus)", stage: 25, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2406, name: "Crustensyl le Pragmatique", subtitle: "(Crustensyl)", stage: 25, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2407, name: "Cruskof le Rustre", subtitle: "(Cruskof)", stage: 25, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2404, name: "Dragnoute l'Irascible", subtitle: "(Dragnoute)", stage: 25, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
+            { id: 2391, name: "Farlon l'Enfant", subtitle: "(Farlon)", stage: 25, quantity: 0, status: "aucun", zone: "Le labyrinthe du Dragon Cochon" },
+            { id: 2397, name: "Picht le Brioché", subtitle: "(Picht)", stage: 25, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2403, name: "Scorpitène l'Enflammé", subtitle: "(Scorpitène)", stage: 25, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2393, name: "Scaratyn l'huitre", subtitle: "(Scaratyn)", stage: 25, quantity: 0, status: "aucun", zone: "L'île du Minotoror" },
+            { id: 2399, name: "Tronkoneuz la Tranchante", subtitle: "(Tronkoneuz)", stage: 25, quantity: 0, status: "aucun", zone: "Forêt des Abraknydes" },
+            
+            // Étape 26
+            { id: 2417, name: "Aboudbra le Porteur", subtitle: "(Aboudbra)", stage: 26, quantity: 0, status: "aucun", zone: "Territoire des Dopeuls" },
+            { id: 2421, name: "Ameur la Laide", subtitle: "(Ameur)", stage: 26, quantity: 0, status: "aucun", zone: "Territoire des Dopeuls" },
+            { id: 2418, name: "Arabord la Cruche", subtitle: "(Arabord)", stage: 26, quantity: 0, status: "aucun", zone: "Bonta" },
+            { id: 2419, name: "Caboume l'Artilleur", subtitle: "(Caboume)", stage: 26, quantity: 0, status: "aucun", zone: "L'île de Moon" },
+            { id: 2420, name: "Cavordemal le Sorcier", subtitle: "(Cavordemal)", stage: 26, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2433, name: "Chafmarcel le Fêtard", subtitle: "(Chafmarcel)", stage: 26, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2434, name: "Chalan le Commerçant", subtitle: "(Chalan)", stage: 26, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2436, name: "Chamitant le Dillettante", subtitle: "(Chamitant)", stage: 26, quantity: 0, status: "aucun", zone: "Bonta" },
+            { id: 2424, name: "Codenlgaz le Problème", subtitle: "(Codenlgaz)", stage: 26, quantity: 0, status: "aucun", zone: "Territoire des Dopeuls" },
+            { id: 2408, name: "Crusmeyer le Pervers", subtitle: "(Crusmeyer)", stage: 26, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2416, name: "Forboyar l'Enigmatique", subtitle: "(Forboyar)", stage: 26, quantity: 0, status: "aucun", zone: "Brâkmar" },
+            { id: 2425, name: "Ginsenk le Stimulant", subtitle: "(Ginsenk)", stage: 26, quantity: 0, status: "aucun", zone: "Territoire des Dopeuls" },
+            { id: 2419, name: "Grandilok le Clameur", subtitle: "(Grandilok)", stage: 26, quantity: 0, status: "aucun", zone: "L'île des Wabbits" },
+            { id: 2431, name: "Kiroyal le Sirupeux", subtitle: "(Kiroyal)", stage: 26, quantity: 0, status: "aucun", zone: "Territoire des Dopeuls" },
+            { id: 2432, name: "Koktèle le Secoué", subtitle: "(Koktèle)", stage: 26, quantity: 0, status: "aucun", zone: "L'île de Moon" },
+            { id: 2427, name: "Let le Rond", subtitle: "(Let)", stage: 26, quantity: 0, status: "aucun", zone: "Territoire des Dopeuls" },
+            { id: 2428, name: "Nelvin le Boulet", subtitle: "(Nelvin)", stage: 26, quantity: 0, status: "aucun", zone: "Territoire des Dopeuls" },
+            { id: 2429, name: "Nipulnislip l'Exhibitionniste", subtitle: "(Nipulnislip)", stage: 26, quantity: 0, status: "aucun", zone: "Territoire des Dopeuls" },
+            { id: 2430, name: "Osuxion le Vampirique", subtitle: "(Osuxion)", stage: 26, quantity: 0, status: "aucun", zone: "Territoire des Dopeuls" },
+            { id: 2423, name: "Susbewl l'Hypocrite", subtitle: "(Susbewl)", stage: 26, quantity: 0, status: "aucun", zone: "Territoire des Dopeuls" },
+            { id: 2420, name: "Wokènrôl le Danseur", subtitle: "(Wokènrôl)", stage: 26, quantity: 0, status: "aucun", zone: "L'île des Wabbits" },
+            
+            // Étape 27
+            { id: 2450, name: "Abrakildas le Vénérable", subtitle: "(Abrakildas)", stage: 27, quantity: 0, status: "aucun", zone: "Forêt des Abraknydes" },
+            { id: 2452, name: "Chafrit le Barbare", subtitle: "(Chafrit)", stage: 27, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2436, name: "Chamitant le Dillettante", subtitle: "(Chamitant)", stage: 27, quantity: 0, status: "aucun", zone: "Bonta" },
+            { id: 2451, name: "Cramikaz le Suicidaire", subtitle: "(Cramikaz)", stage: 27, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2453, name: "Craquetou le Fissuré", subtitle: "(Craquetou)", stage: 27, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2437, name: "Doktopuss le Maléfique", subtitle: "(Doktopuss)", stage: 27, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
+            { id: 2544, name: "Dragoeth le Penseur", subtitle: "(Dragoeth)", stage: 27, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2543, name: "Dragma le Bouillant", subtitle: "(Dragma)", stage: 27, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2545, name: "Dragonienne l'Econome", subtitle: "(Dragonienne)", stage: 27, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2542, name: "Dragoo le Cramoisi", subtitle: "(Dragoo)", stage: 27, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2541, name: "Dragtonien le Malvoyant", subtitle: "(Dragtonien)", stage: 27, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2438, name: "Germinol l'Indigent", subtitle: "(Germinol)", stage: 27, quantity: 0, status: "aucun", zone: "L'île du Minotoror" },
+            { id: 2456, name: "Kannibal le Lecteur", subtitle: "(Kannibal)", stage: 27, quantity: 0, status: "aucun", zone: "L'île de Moon" },
+            { id: 2457, name: "Kapota la Fraise", subtitle: "(Kapota)", stage: 27, quantity: 0, status: "aucun", zone: "L'île de Moon" },
+            { id: 2439, name: "Koalastrof la Naturelle", subtitle: "(Koalastrof)", stage: 27, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
+            { id: 2454, name: "Maître Onom le Régulier", subtitle: "(Maître Onom)", stage: 27, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2442, name: "Ouashouash l'Exubérant", subtitle: "(Ouashouash)", stage: 27, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2441, name: "Ouassébo l'Esthète", subtitle: "(Ouassébo)", stage: 27, quantity: 0, status: "aucun", zone: "Astrub" },
+            { id: 2440, name: "Ouature la Mobile", subtitle: "(Ouature)", stage: 27, quantity: 0, status: "aucun", zone: "Astrub" },
+            { id: 2446, name: "Palmiche le Serein", subtitle: "(Palmiche)", stage: 27, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2448, name: "Palmiflette le Convivial", subtitle: "(Palmiflette)", stage: 27, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2447, name: "Palmito le Menteur", subtitle: "(Palmito)", stage: 27, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2450, name: "Sampi l'Eternel", subtitle: "(Sampi)", stage: 27, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            
+            // Étape 28
+            { id: 2460, name: "Corboyard l'Enigmatique", subtitle: "(Corboyard)", stage: 28, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2465, name: "Drageaufol la Joyeuse", subtitle: "(Drageaufol)", stage: 28, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2482, name: "Dragioli le Succulent", subtitle: "(Dragioli)", stage: 28, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2464, name: "Dragstik le Frustre", subtitle: "(Dragstik)", stage: 28, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2466, name: "Dragtula l'Ancien", subtitle: "(Dragtula)", stage: 28, quantity: 0, status: "aucun", zone: "" },
+            { id: 2467, name: "Dragsta le Détendu", subtitle: "(Dragsta)", stage: 28, quantity: 0, status: "aucun", zone: "" },
+            { id: 2468, name: "Dragtopaile l'Excavateur", subtitle: "(Dragtopaile)", stage: 28, quantity: 0, status: "aucun", zone: "" },
+            { id: 2485, name: "Dragybuss le Sucré", subtitle: "(Dragybuss)", stage: 28, quantity: 0, status: "aucun", zone: "" },
+            { id: 2484, name: "Dragalgan l'Effervescent", subtitle: "(Dragalgan)", stage: 28, quantity: 0, status: "aucun", zone: "" },
+            { id: 2461, name: "Dragonienne l'Econome", subtitle: "(Dragonienne)", stage: 28, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2515, name: "Fanlabiz le Véloce", subtitle: "(Fanlabiz)", stage: 28, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2516, name: "Fandanleuil le Précis", subtitle: "(Fandanleuil)", stage: 28, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2518, name: "Fantrask le Rêveur", subtitle: "(Fantrask)", stage: 28, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2458, name: "Kannémik le Maigre", subtitle: "(Kannémik)", stage: 28, quantity: 0, status: "aucun", zone: "L'île de Moon" },
+            { id: 2459, name: "Kannisterik le Forcené", subtitle: "(Kannisterik)", stage: 28, quantity: 0, status: "aucun", zone: "L'île de Moon" },
+            { id: 2461, name: "Ougaould le Parasite", subtitle: "(Ougaould)", stage: 28, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2460, name: "Palmbytch la Bronzée", subtitle: "(Palmbytch)", stage: 28, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2460, name: "Ratlbol l'Aigri", subtitle: "(Ratlbol)", stage: 28, quantity: 0, status: "aucun", zone: "Bonta" },
+            { id: 2493, name: "Rauligo le Sale", subtitle: "(Rauligo)", stage: 28, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2487, name: "Serpistule le Purulent", subtitle: "(Serpistule)", stage: 28, quantity: 0, status: "aucun", zone: "L'île du Minotoror" },
+            
+            // Étape 29
+            { id: 2494, name: "Barebourd le Comte", subtitle: "(Barebourd)", stage: 29, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2494, name: "Caboume l'Artilleur", subtitle: "(Caboume)", stage: 29, quantity: 0, status: "aucun", zone: "L'île de Moon" },
+            { id: 2497, name: "Chiendanlémin l'Illusionniste", subtitle: "(Chiendanlémin)", stage: 29, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2503, name: "Dragkouine la Déguisée", subtitle: "(Dragkouine)", stage: 29, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2502, name: "Dragmoclaiss le Fataliste", subtitle: "(Dragmoclaiss)", stage: 29, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2505, name: "Dragnostik le Sceptique", subtitle: "(Dragnostik)", stage: 29, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2498, name: "Dragstayr le Fonceur", subtitle: "(Dragstayr)", stage: 29, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2517, name: "Fantoch le Pantin", subtitle: "(Fantoch)", stage: 29, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2495, name: "Gloubibou le Gars", subtitle: "(Gloubibou)", stage: 29, quantity: 0, status: "aucun", zone: "L'île de Moon" },
+            { id: 2495, name: "Grandilok le Clameur", subtitle: "(Grandilok)", stage: 29, quantity: 0, status: "aucun", zone: "L'île des Wabbits" },
+            { id: 2496, name: "Guerrite le Veilleur", subtitle: "(Guerrite)", stage: 29, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
+            { id: 2507, name: "Koakofrui le Confit", subtitle: "(Koakofrui)", stage: 29, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
+            { id: 2506, name: "Koamaembair le Coulant", subtitle: "(Koamaembair)", stage: 29, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
+            { id: 2509, name: "Koarmit la Batracienne", subtitle: "(Koarmit)", stage: 29, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
+            { id: 2508, name: "Koaskette la Chapelière", subtitle: "(Koaskette)", stage: 29, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
+            { id: 2495, name: "Nakuneuye le Borgne", subtitle: "(Nakuneuye)", stage: 29, quantity: 0, status: "aucun", zone: "L'île de Moon" },
+            { id: 2520, name: "Nerdeubeu le Flagellant", subtitle: "(Nerdeubeu)", stage: 29, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2513, name: "Ratéhaifaim le Professeur", subtitle: "(Ratéhaifaim)", stage: 29, quantity: 0, status: "aucun", zone: "Bonta" },
+            { id: 2514, name: "Sparoket le Lanceur", subtitle: "(Sparoket)", stage: 29, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            
+            // Étape 30
+            { id: 2520, name: "Bitoven le Musicien", subtitle: "(Bitoven)", stage: 30, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
+            { id: 2524, name: "Crathdogue le Cruel", subtitle: "(Crathdogue)", stage: 30, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2521, name: "Crok le Beau", subtitle: "(Crok)", stage: 30, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
+            { id: 2541, name: "Dragoo le Cramoisi", subtitle: "(Dragoo)", stage: 30, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2545, name: "Dragonienne l'Econome", subtitle: "(Dragonienne)", stage: 30, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2544, name: "Dragoeth le Penseur", subtitle: "(Dragoeth)", stage: 30, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2543, name: "Dragma le Bouillant", subtitle: "(Dragma)", stage: 30, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2542, name: "Dragtonien le Malvoyant", subtitle: "(Dragtonien)", stage: 30, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2528, name: "Fanfancisco le Cosmopolite", subtitle: "(Fanfancisco)", stage: 30, quantity: 0, status: "aucun", zone: "" },
+            { id: 2529, name: "Fanhnatur le Simple", subtitle: "(Fanhnatur)", stage: 30, quantity: 0, status: "aucun", zone: "" },
+            { id: 2530, name: "Fanjipann le Sucré", subtitle: "(Fanjipann)", stage: 30, quantity: 0, status: "aucun", zone: "" },
+            { id: 2532, name: "Fanjo le Pilote", subtitle: "(Fanjo)", stage: 30, quantity: 0, status: "aucun", zone: "" },
+            { id: 2526, name: "Fanlmyl l'Acuité", subtitle: "(Fanlmyl)", stage: 30, quantity: 0, status: "aucun", zone: "" },
+            { id: 2539, name: "Kanasukr le Mielleux", subtitle: "(Kanasukr)", stage: 30, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2540, name: "Kido l'Âtre", subtitle: "(Kido)", stage: 30, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2541, name: "Kilimanj'haro le Grimpeur", subtitle: "(Kilimanj'haro)", stage: 30, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2538, name: "Muloufok l'Hilarant", subtitle: "(Muloufok)", stage: 30, quantity: 0, status: "aucun", zone: "Plaine de Cania" },
+            { id: 2535, name: "Mufguedin le Suprême", subtitle: "(Mufguedin)", stage: 30, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2547, name: "Onihylis le Destructeur", subtitle: "(Onihylis)", stage: 30, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2522, name: "Toufou le Benêt", subtitle: "(Toufou)", stage: 30, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            
+            // Étape 31
+            { id: 2556, name: "Abraklette le Fondant", subtitle: "(Abraklette)", stage: 31, quantity: 0, status: "aucun", zone: "Forêt des Abraknydes" },
+            { id: 2550, name: "Abrakanette l'Encapsulé", subtitle: "(Abrakanette)", stage: 31, quantity: 0, status: "aucun", zone: "Forêt des Abraknydes" },
+            { id: 2562, name: "Brouste l'Humiliant", subtitle: "(Brouste)", stage: 31, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2553, name: "Chamoute le Duveteux", subtitle: "(Chamoute)", stage: 31, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2554, name: "Chamilero le Malchanceux", subtitle: "(Chamilero)", stage: 31, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2552, name: "Champolyon le Polyglotte", subtitle: "(Champolyon)", stage: 31, quantity: 0, status: "aucun", zone: "Landes de Sidimote" },
+            { id: 2559, name: "Dragdikal le Décisif", subtitle: "(Dragdikal)", stage: 31, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2560, name: "Dragobert le Monarque", subtitle: "(Dragobert)", stage: 31, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2561, name: "Diskord le Belliqueux", subtitle: "(Diskord)", stage: 31, quantity: 0, status: "aucun", zone: "Village des Zoths" },
+            { id: 2551, name: "Fossamoel le Juteux", subtitle: "(Fossamoel)", stage: 31, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
+            { id: 2552, name: "Gloubibou le Gars", subtitle: "(Gloubibou)", stage: 31, quantity: 0, status: "aucun", zone: "L'île de Moon" },
+            { id: 2557, name: "Koamag'oel le Défiguré", subtitle: "(Koamag'oel)", stage: 31, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
+            { id: 2553, name: "Koasossyal le Psychopathe", subtitle: "(Koasossyal)", stage: 31, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
+            { id: 2558, name: "Meuroup le Prêtre", subtitle: "(Meuroup)", stage: 31, quantity: 0, status: "aucun", zone: "Île d'Otomaï" },
+            { id: 2547, name: "Onihylis le Destructeur", subtitle: "(Onihylis)", stage: 31, quantity: 0, status: "aucun", zone: "Amakna" },
+            { id: 2555, name: "Pékeutar le Tireur", subtitle: "(Pékeutar)", stage: 31, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
+            { id: 2555, name: "Piradain le Pingre", subtitle: "(Piradain)", stage: 31, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
+            { id: 2549, name: "Warkolad l'Etreinte", subtitle: "(Warkolad)", stage: 31, quantity: 0, status: "aucun", zone: "Montagne des Koalaks" },
         ];
 
-        // Initialisation de Firebase
-        try {
-            const app = initializeApp(firebaseConfig);
-            console.log("Firebase initialisé avec succès :", app);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
-            let currentUser = null;
+        // Fonction pour remplir les listes Recherchés et Doublons
+        function populateLists() {
+            const wantedList = document.getElementById('wantedList');
+            const duplicatesList = document.getElementById('duplicatesList');
 
-            // Vérifier si l'utilisateur est connecté
-            onAuthStateChanged(auth, (user) => {
-                if (!user) {
-                    // Si l'utilisateur n'est pas connecté, redirige vers la page de connexion
-                    window.location.href = 'index.html';
-                } else {
-                    console.log("Utilisateur connecté :", user.email);
-                    currentUser = user;
-                    loadUserArchimonstres();
-                }
-            });
+            // Filtrer les archimonstres pour "Recherchés" (quantité = 0)
+            const wanted = archimonstres.filter(archi => archi.quantity === 0);
+            // Filtrer les archimonstres pour "Doublons" (quantité >= 2)
+            const duplicates = archimonstres.filter(archi => archi.quantity >= 2);
 
-            // Charger les données de l'utilisateur depuis Firestore
-            async function loadUserArchimonstres() {
-                const userDocRef = doc(db, "users", currentUser.uid);
-                const userDoc = await getDoc(userDocRef);
-
-                if (userDoc.exists()) {
-                    const userData = userDoc.data();
-                    archimonstres.forEach((monster, index) => {
-                        if (userData[monster.id] !== undefined) {
-                            archimonstres[index].quantity = userData[monster.id];
-                        }
-                    });
-                } else {
-                    // Si l'utilisateur n'a pas encore de données, initialiser avec des quantités à 0
-                    const initialData = {};
-                    archimonstres.forEach(monster => {
-                        initialData[monster.id] = 0;
-                    });
-                    await setDoc(userDocRef, initialData);
-                }
-
-                renderArchimonstres(archimonstres);
-            }
-
-            // Sauvegarder les données de l'utilisateur dans Firestore
-            async function saveUserArchimonstres() {
-                const userDocRef = doc(db, "users", currentUser.uid);
-                const dataToSave = {};
-                archimonstres.forEach(monster => {
-                    dataToSave[monster.id] = monster.quantity;
-                });
-                await setDoc(userDocRef, dataToSave);
-            }
-
-            // Rendre la liste des archimonstres
-            function renderArchimonstres(monsters) {
-                const monsterList = document.getElementById('monsterList');
-                monsterList.innerHTML = '';
-
-                monsters.forEach(monster => {
-                    const monsterDiv = document.createElement('div');
-                    monsterDiv.classList.add('monster');
-                    monsterDiv.classList.add(monster.quantity > 0 ? 'owned' : 'missing');
-
-                    const name = document.createElement('h3');
-                    name.textContent = monster.name;
-                    monsterDiv.appendChild(name);
-
-                    const subtitle = document.createElement('p');
-                    subtitle.textContent = monster.subtitle;
-                    monsterDiv.appendChild(subtitle);
-
-                    const stage = document.createElement('p');
-                    stage.textContent = `Étape ${monster.stage}`;
-                    monsterDiv.appendChild(stage);
-
-                    const controls = document.createElement('div');
-                    controls.classList.add('quantity-controls');
-
-                    const minusBtn = document.createElement('button');
-                    minusBtn.textContent = '-';
-                    minusBtn.addEventListener('click', () => {
-                        if (monster.quantity > 0) {
-                            monster.quantity--;
-                            saveUserArchimonstres();
-                            renderArchimonstres(archimonstres);
-                        }
-                    });
-                    controls.appendChild(minusBtn);
-
-                    const quantitySpan = document.createElement('span');
-                    quantitySpan.textContent = monster.quantity;
-                    controls.appendChild(quantitySpan);
-
-                    const plusBtn = document.createElement('button');
-                    plusBtn.textContent = '+';
-                    plusBtn.addEventListener('click', () => {
-                        monster.quantity++;
-                        saveUserArchimonstres();
-                        renderArchimonstres(archimonstres);
-                    });
-                    controls.appendChild(plusBtn);
-
-                    monsterDiv.appendChild(controls);
-                    monsterList.appendChild(monsterDiv);
+            // Remplir la liste "Recherchés"
+            if (wanted.length === 0) {
+                wantedList.innerHTML = '<p class="empty-message">Aucun archimonstre recherché pour le moment.</p>';
+            } else {
+                wanted.forEach(archi => {
+                    const item = document.createElement('div');
+                    item.classList.add('list-item');
+                    item.textContent = `${archi.name} (${archi.zone}) - Étape ${archi.stage}`;
+                    wantedList.appendChild(item);
                 });
             }
 
-            // Gestion du filtre de recherche
-            const searchInput = document.getElementById('search');
-            searchInput.addEventListener('input', function() {
-                const search = searchInput.value.toLowerCase();
-                const filteredMonsters = archimonstres.filter(monster =>
-                    monster.name.toLowerCase().includes(search) ||
-                    monster.subtitle.toLowerCase().includes(search)
-                );
-                renderArchimonstres(filteredMonsters);
-            });
-
-            // Gestion de la déconnexion
-            document.getElementById('logoutBtn').addEventListener('click', function() {
-                signOut(auth).then(() => {
-                    alert('Déconnexion réussie !');
-                    window.location.href = 'index.html';
-                }).catch((error) => {
-                    alert('Erreur lors de la déconnexion : ' + error.message);
+            // Remplir la liste "Doublons"
+            if (duplicates.length === 0) {
+                duplicatesList.innerHTML = '<p class="empty-message">Aucun doublon pour le moment.</p>';
+            } else {
+                duplicates.forEach(archi => {
+                    const item = document.createElement('div');
+                    item.classList.add('list-item');
+                    item.textContent = `${archi.name} (${archi.zone}) - Quantité: ${archi.quantity}`;
+                    duplicatesList.appendChild(item);
                 });
-            });
-
-            // Redirection vers la page d'échange
-            document.getElementById('tradeBtn').addEventListener('click', function() {
-                window.location.href = 'trade.html';
-            });
-
-        } catch (error) {
-            console.error("Erreur lors de l'initialisation de Firebase :", error);
-            alert("Erreur d'initialisation de Firebase : " + error.message);
+            }
         }
+
+        // Ajouter la fonctionnalité au bouton Retour
+        document.getElementById('returnButton').addEventListener('click', () => {
+            // Rediriger vers la page "Mes Archimonstres"
+            window.location.href = 'archimonstres.html';
+        });
+
+        // Appeler la fonction pour remplir les listes au chargement de la page
+        window.onload = populateLists;
     </script>
 </body>
 </html>
