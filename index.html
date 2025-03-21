@@ -90,6 +90,13 @@
         .login-container .signup-link a:hover {
             text-decoration: underline;
         }
+
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none; /* Caché par défaut */
+        }
     </style>
 </head>
 <body>
@@ -106,6 +113,7 @@
             </div>
             <button type="submit">Se connecter</button>
         </form>
+        <div id="errorMessage" class="error-message"></div>
         <div class="signup-link">
             Pas de compte ? <a href="signup.html">S'inscrire</a>
         </div>
@@ -150,6 +158,11 @@
                 event.preventDefault();
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
+                const errorMessageDiv = document.getElementById('errorMessage');
+
+                // Réinitialiser le message d'erreur
+                errorMessageDiv.style.display = 'none';
+                errorMessageDiv.textContent = '';
 
                 console.log("Tentative de connexion avec :", email);
 
@@ -166,14 +179,15 @@
                         const errorCode = error.code;
                         const errorMessage = error.message;
                         console.error("Erreur de connexion :", errorCode, errorMessage);
-                        if (errorCode === 'auth/user-not-found') {
-                            alert("Erreur : Aucun utilisateur trouvé avec cet email.");
-                        } else if (errorCode === 'auth/wrong-password') {
-                            alert("Erreur : Mot de passe incorrect.");
+
+                        // Afficher le message d'erreur dans l'interface
+                        errorMessageDiv.style.display = 'block';
+                        if (errorCode === 'auth/user-not-found' || errorCode === 'auth/wrong-password' || errorCode === 'auth/invalid-login-credentials') {
+                            errorMessageDiv.textContent = "Email ou mot de passe incorrect.";
                         } else if (errorCode === 'auth/invalid-email') {
-                            alert("Erreur : Adresse email invalide.");
+                            errorMessageDiv.textContent = "Adresse email invalide.";
                         } else {
-                            alert('Erreur : ' + errorMessage);
+                            errorMessageDiv.textContent = "Erreur : " + errorMessage;
                         }
                     });
             });
