@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestion Archimonstres - Dofus Touch</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #2c3e50; }
+        .monster-list { display: grid; gap: 10px; }
+        .monster { padding: 10px; background: #ecf0f1; border-radius: 5px; }
+        .filter { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Gestion des Archimonstres</h1>
+    <div class="filter">
+        <input type="text" id="search" placeholder="Rechercher un archimonstre...">
+    </div>
+    <div class="monster-list" id="monsterList">
+        <div class="monster"><input type="checkbox"> Bworknroll</div>
+        <div class="monster"><input type="checkbox"> Chafalolita</div>
+        <div class="monster"><input type="checkbox"> Kanigroula</div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('search');
+        const monsterList = document.getElementById('monsterList');
+
+        searchInput.addEventListener('input', function() {
+            const search = searchInput.value.toLowerCase();
+            const monsters = monsterList.getElementsByClassName('monster');
+            for (let monster of monsters) {
+                const name = monster.textContent.toLowerCase();
+                monster.style.display = name.includes(search) ? 'block' : 'none';
+            }
+        });
+    </script>
+</body>
+</html>
