@@ -109,11 +109,12 @@
         </div>
     </div>
 
-    <!-- Intégration de Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <!-- Intégration de Firebase (version modulaire) -->
+    <script type="module">
+        // Importer les modules Firebase nécessaires
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
-    <script>
         // Configuration Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBoun8Q9ORu6cE7sdM7_nU5iNbt4NVHgQA",
@@ -127,47 +128,46 @@
 
         // Initialisation de Firebase
         try {
-            firebase.initializeApp(firebaseConfig);
+            const app = initializeApp(firebaseConfig);
             console.log("Firebase initialisé avec succès");
+            const auth = getAuth(app);
+
+            // Vérifier si l'utilisateur est connecté
+            onAuthStateChanged(auth, (user) => {
+                if (!user) {
+                    // Si l'utilisateur n'est pas connecté, redirige vers la page de connexion
+                    window.location.href = 'index.html';
+                } else {
+                    console.log("Utilisateur connecté :", user.email);
+                }
+            });
+
+            // Gestion de la déconnexion
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                signOut(auth).then(() => {
+                    alert('Déconnexion réussie !');
+                    window.location.href = 'index.html';
+                }).catch((error) => {
+                    alert('Erreur lors de la déconnexion : ' + error.message);
+                });
+            });
+
+            // Gestion du filtre de recherche
+            const searchInput = document.getElementById('search');
+            const monsterList = document.getElementById('monsterList');
+
+            searchInput.addEventListener('input', function() {
+                const search = searchInput.value.toLowerCase();
+                const monsters = monsterList.getElementsByClassName('monster');
+                for (let monster of monsters) {
+                    const name = monster.textContent.toLowerCase();
+                    monster.style.display = name.includes(search) ? 'flex' : 'none';
+                }
+            });
         } catch (error) {
             console.error("Erreur lors de l'initialisation de Firebase :", error);
             alert("Erreur d'initialisation de Firebase. Vérifiez la configuration.");
         }
-
-        const auth = firebase.auth();
-
-        // Vérifier si l'utilisateur est connecté
-        auth.onAuthStateChanged((user) => {
-            if (!user) {
-                // Si l'utilisateur n'est pas connecté, redirige vers la page de connexion
-                window.location.href = 'index.html';
-            } else {
-                console.log("Utilisateur connecté :", user.email);
-            }
-        });
-
-        // Gestion de la déconnexion
-        document.getElementById('logoutBtn').addEventListener('click', function() {
-            auth.signOut().then(() => {
-                alert('Déconnexion réussie !');
-                window.location.href = 'index.html';
-            }).catch((error) => {
-                alert('Erreur lors de la déconnexion : ' + error.message);
-            });
-        });
-
-        // Gestion du filtre de recherche
-        const searchInput = document.getElementById('search');
-        const monsterList = document.getElementById('monsterList');
-
-        searchInput.addEventListener('input', function() {
-            const search = searchInput.value.toLowerCase();
-            const monsters = monsterList.getElementsByClassName('monster');
-            for (let monster of monsters) {
-                const name = monster.textContent.toLowerCase();
-                monster.style.display = name.includes(search) ? 'flex' : 'none';
-            }
-        });
     </script>
 </body>
 </html>
