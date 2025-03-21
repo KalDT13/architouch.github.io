@@ -114,19 +114,26 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
 
     <script>
-        // Configuration Firebase (remplace par ton propre firebaseConfig)
+        // Configuration Firebase
         const firebaseConfig = {
-          apiKey: "AIzaSyBoun8Q9ORu6cE7sdM7_nU5iNbt4NVHgQA",
-          authDomain: "architouch-a4785.firebaseapp.com",
-          projectId: "architouch-a4785",
-          storageBucket: "architouch-a4785.firebasestorage.app",
-          messagingSenderId: "39007762687",
-          appId: "1:39007762687:web:a03ff1050bda5c26a4b4ca",
-          measurementId: "G-HLR9LGHPGF"
+            apiKey: "AIzaSyBoun8Q9ORu6cE7sdM7_nU5iNbt4NVHgQA",
+            authDomain: "architouch-a4785.firebaseapp.com",
+            projectId: "architouch-a4785",
+            storageBucket: "architouch-a4785.firebasestorage.app",
+            messagingSenderId: "39007762687",
+            appId: "1:39007762687:web:a03ff1050bda5c26a4b4ca",
+            measurementId: "G-HLR9LGHPGF"
         };
 
         // Initialisation de Firebase
-        firebase.initializeApp(firebaseConfig);
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase initialisé avec succès");
+        } catch (error) {
+            console.error("Erreur lors de l'initialisation de Firebase :", error);
+            alert("Erreur d'initialisation de Firebase. Vérifiez la configuration.");
+        }
+
         const auth = firebase.auth();
 
         // Vérifier si l'utilisateur est connecté
@@ -134,6 +141,8 @@
             if (!user) {
                 // Si l'utilisateur n'est pas connecté, redirige vers la page de connexion
                 window.location.href = 'index.html';
+            } else {
+                console.log("Utilisateur connecté :", user.email);
             }
         });
 
